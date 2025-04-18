@@ -9,3 +9,33 @@ J7	Interface utilisateur soignée	Kanban ou listes avec tri, filtre. Responsive 
 J8	Tests front et back	Pytest pour le back, Postman pour l’API. Option Jest côté front si temps.
 J9	Documentation + CI/CD	Rédiger README, wiki, doc des endpoints. Setup GitLab CI (même basique).
 J10	Préparation entretien	Relecture du projet, simulation d’entretien technique, révision des concepts clés.
+
+
+
+taskflow/
+├── backend/
+│   ├── app/
+│   │   ├── main.py                  # Point d'entrée FastAPI
+│   │   ├── models/                  # Modèles DB
+│   │   ├── routes/                  # Endpoints FastAPI
+│   │   ├── services/                # Logique métier
+│   │   ├── tests/                   # Tests Pytest
+│   │   └── requirements.txt         # Dépendances Python
+│   ├── Dockerfile                   # Dockerfile pour le back
+│   └── .gitlab-ci.yml               # CI pour GitLab
+├── frontend/
+│   ├── public/                      # Fichiers statiques
+│   ├── src/
+│   │   ├── components/              # Composants React
+│   │   ├── pages/                   # Pages React
+│   │   ├── services/                # Services API
+│   │   ├── styles/                  # Styles Tailwind
+│   │   ├── App.tsx                  # Entrée principale de l'app React
+│   │   └── index.tsx                # Point d'entrée React
+│   ├── tailwind.config.js           # Config Tailwind
+│   ├── tsconfig.json                # Configuration TypeScript
+│   ├── package.json                 # Dépendances du Front-End
+│   └── Dockerfile                   # Dockerfile pour le Front
+├── docker-compose.yml              # Orchestration de Docker
+├── README.md                       # Documentation du projet
+└── .gitlab-ci.yml                  # Configuration CI/CD pour GitLab
