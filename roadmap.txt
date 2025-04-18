@@ -1,0 +1,11 @@
+Jour	Objectif	Détails
+J1	Apprendre Django + config projet	Suivre un mini tuto officiel / vidéo. Initier le projet (API de base, user model custom).
+J2	Authentification + modèles de base	Création des modèles User, Projet, Tâche + relations. Login / register avec Django Rest Auth.
+J3	API REST complète	Endpoints CRUD pour utilisateurs, projets, tâches. Tests Postman ou Pytest.
+J4	Setup PostgreSQL + Docker	Dockerfile, docker-compose, DB config. Pousser sur GitLab.
+J5	Démarrer le front React	Setup React + Tailwind. Pages login/register.
+J6	Intégration API côté front	Axios/fetch, affichage des projets/tâches. Authentification avec token.
+J7	Interface utilisateur soignée	Kanban ou listes avec tri, filtre. Responsive design.
+J8	Tests front et back	Pytest pour le back, Postman pour l’API. Option Jest côté front si temps.
+J9	Documentation + CI/CD	Rédiger README, wiki, doc des endpoints. Setup GitLab CI (même basique).
+J10	Préparation entretien	Relecture du projet, simulation d’entretien technique, révision des concepts clés.
