@@ -52,11 +52,24 @@ cd taskflow
 #### 2. Installer les dépendances
 
 ```bash
+cd backend
 pip install -r requirements.txt
+cd ../frontend
+npm i
 ```
 
-#### 3. Lancer l'application
+#### 3. Lancer le backend
 
 ```bash
 uvicorn main:app --reload
+```
+
+#### 3. Lancer le frontend
+
+```bash
+npm start
+```
+
+```bash
+npm install tailwindcss@3
 ```
