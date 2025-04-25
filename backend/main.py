@@ -57,10 +57,10 @@ CREATE TABLE IF NOT EXISTS user_projects (
 """)
 
 # Read and execute the SQL file
-with open("populate.sql", "r") as file:
+'''with open("populate.sql", "r") as file:
     sql_script = file.read()
     cursor.executescript(sql_script)
-conn.commit()
+conn.commit()'''
 
 # Models
 class User(BaseModel):
@@ -124,6 +124,16 @@ async def read_tasks():
     """)
     tasks = cursor.fetchall()
     return {"tasks": tasks}
+
+@app.get("/projects/")
+async def get_all_projects():
+    cursor.execute("SELECT id, name, description FROM projects")
+    projects = cursor.fetchall()
+    return {
+        "projects": [
+            {"id": row[0], "name": row[1], "description": row[2]} for row in projects
+        ]
+    }
 
 
 @app.get("/users/")
