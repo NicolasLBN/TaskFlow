@@ -47,3 +47,16 @@ TaskFlow est une application web full-stack construite avec **React (TypeScript)
 ```bash
 git clone https://github.com/votre-utilisateur/taskflow.git
 cd taskflow
+```
+
+#### 2. Installer les dépendances
+
+```bash
+pip install -r requirements.txt
+```
+
+#### 3. Lancer l'application
+
+```bash
+uvicorn main:app --reload
+```
