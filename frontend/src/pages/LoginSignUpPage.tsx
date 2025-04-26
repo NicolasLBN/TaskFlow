@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { loginUser, registerUser, User} from '../services/api'; // Import des services API
+import { useAuth } from '../context/AuthProvider';
 
 const LoginSignUpPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true); // Toggle entre login et sign-up
@@ -7,6 +8,8 @@ const LoginSignUpPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>('');
   const [success, setSuccess] = useState<string | null>('');
+  const { setToken } = useAuth();
+
 
   const toggleForm = () => {
     setIsLogin(!isLogin);
@@ -18,33 +21,26 @@ const LoginSignUpPage: React.FC = () => {
     e.preventDefault();
     setError(null);
     setSuccess(null);
-  
+
     try {
       if (isLogin) {
-        // Appel de l'API pour le login
         const user: User = { username, password };
         const response = await loginUser(user);
-        console.log('API Response:', response); // Debug the response
-        setSuccess(response.message || 'Login successful'); // Ensure message is a string
+        console.log('API Response:', response);
+
+        // Save the token in context and localStorage
+        setToken(response.token);
+        localStorage.setItem('authToken', response.token);
+
+        setSuccess('Login successful');
       } else {
-        // Appel de l'API pour l'inscription
         const response = await registerUser({ username, password });
-        console.log('API Response:', response); // Debug the response
-        setSuccess(response.message || 'Registration successful'); // Ensure message is a string
+        console.log('API Response:', response);
+        setSuccess('Registration successful');
       }
     } catch (err: any) {
       console.error('Error:', err.response?.data);
-  
-      // Handle the `detail` array in the error response
-      const errorDetails = err.response?.data?.detail;
-      if (Array.isArray(errorDetails)) {
-        const errorMessages = errorDetails.map((detail: any) => detail.msg).join(', ');
-        setError(errorMessages); // Combine all error messages into a single string
-      } else {
-        const errorMessage =
-          err.response?.data?.detail || 'An error occurred. Please try again.';
-        setError(errorMessage); // Ensure error is a string
-      }
+      setError(err.response?.data?.detail || 'An error occurred. Please try again.');
     }
   };
 
