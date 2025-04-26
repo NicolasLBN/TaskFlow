@@ -5,6 +5,15 @@ from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import logging
+from fastapi import Depends
+from fastapi.security import OAuth2PasswordBearer
+from datetime import datetime, timedelta
+import jwt
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+SECRET_KEY = "wwedqwdqwsqsadqwdqwdqwdqwdqwdqwdqwdqwdqw"  # Change this to a secure random key
+ALGORITHM = "HS256"
 
 # Configuration de base du logger
 logging.basicConfig(
@@ -144,7 +153,6 @@ async def get_all_projects():
         ]
     }
 
-
 @app.get("/users/")
 async def get_all_users():
     cursor.execute("SELECT id, username FROM users")
@@ -185,6 +193,16 @@ async def register_user(request: RegisterRequest):
 
 
 
+def create_access_token(data: dict, expires_delta: timedelta = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.utcnow() + expires_delta
+    else:
+        expire = datetime.utcnow() + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+    
 class LoginRequest(BaseModel):
     username: str
     password: str
@@ -194,10 +212,20 @@ async def login_user(request: LoginRequest):
     username = request.username
     password = request.password
     logger.info(f"Attempting to log in user: {username}")
-    cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
+
+    # Fetch the user from the database
+    cursor.execute("SELECT id, password FROM users WHERE username = ?", (username,))
     user = cursor.fetchone()
-    if not user or not verify_password(password, user[0]):
+
+    # Check if the user exists and the password is correct
+    if not user or not verify_password(password, user[1]):  # Access the password as user[1]
         logger.warning(f"Failed login attempt for user: {username}")
         raise HTTPException(status_code=401, detail="Invalid username or password")
+
     logger.info(f"User {username} logged in successfully")
-    return {"message": "Login successful"}
+
+    # Create an access token
+    access_token = create_access_token(data={"sub": user[0], "username": username})  # user[0] is the user ID
+    return {"token": access_token}
+
+    
