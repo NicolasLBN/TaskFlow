@@ -67,3 +67,17 @@ export const getAllTasks = async () => {
   const response = await axios.get(`${API_URL}/tasks/`);
   return response.data;
 };
+
+export const getUserData = async () => {
+  const token = localStorage.getItem("authToken");
+  if (!token) {
+    throw new Error("No token found");
+  }
+
+  const response = await axios.get(`${API_URL}/user-data/`, {
+    headers: {
+      Authorization: `Bearer ${token}`,
+    },
+  });
+  return response.data;
+};

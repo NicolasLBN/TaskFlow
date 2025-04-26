@@ -228,4 +228,32 @@ async def login_user(request: LoginRequest):
     access_token = create_access_token(data={"sub": user[0], "username": username})  # user[0] is the user ID
     return {"token": access_token}
 
-    
+@app.get("/user-data/")
+async def get_user_data(token: str = Depends(oauth2_scheme)):
+    try:
+        # Décoder le token pour récupérer l'ID de l'utilisateur
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        user_id = payload.get("sub")  # ID de l'utilisateur
+        if user_id is None:
+            raise HTTPException(status_code=401, detail="Invalid token")
+
+        # Récupérer les projets de l'utilisateur
+        cursor.execute("SELECT * FROM projects WHERE id IN (SELECT project_id FROM project_users WHERE user_id = ?)", (user_id,))
+        projects = cursor.fetchall()
+
+        # Récupérer les membres de l'équipe
+        cursor.execute("""
+            SELECT u.id, u.username FROM users u
+            JOIN project_users pu ON u.id = pu.user_id
+            WHERE pu.project_id IN (SELECT project_id FROM project_users WHERE user_id = ?)
+        """, (user_id,))
+        team_members = cursor.fetchall()
+
+        return {
+            "projects": [{"id": p[0], "name": p[1], "description": p[2]} for p in projects],
+            "team_members": [{"id": m[0], "username": m[1]} for m in team_members]
+        }
+    except jwt.ExpiredSignatureError:
+        raise HTTPException(status_code=401, detail="Token expired")
+    except jwt.JWTError:
+        raise HTTPException(status_code=401, detail="Invalid token")
