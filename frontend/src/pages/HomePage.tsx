@@ -1,7 +1,41 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import Navbar from '../layouts/Navbar';
+import { getAllProjects, getAllUsers, Project, User } from '../services/api';
 
 const HomePage: React.FC = () => {
+  const [users, setUsers] = useState<User[]>([]); // State to store fetched users
+  const [projects, setProjects] = useState<Project[]>([]); // State to store fetched projects
+  const [loading, setLoading] = useState<boolean>(true); // State to manage loading
+
+  useEffect(() => {
+    const fetchData = async () => {
+      try {
+        // Fetch users and projects in parallel
+        const [usersResponse, projectsResponse] = await Promise.all([
+          getAllUsers(),
+          getAllProjects(),
+        ]);
+
+        const usersData = usersResponse.users; // Adjust based on your API response structure
+        const projectsData = projectsResponse.projects; // Adjust based on your API response structure
+
+        // Update states
+        setUsers(usersData);
+        setProjects(projectsData);
+
+        console.log('Fetched users:', usersData);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        // Set loading to false after both calls are complete
+        setLoading(false);
+      }
+    };
+
+    fetchData(); // Call the combined fetch function
+  }, []); // Empty dependency array ensures this runs only once
+
+
   return (
     <div>
       <Navbar />

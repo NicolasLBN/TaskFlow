@@ -2,7 +2,7 @@ import React from 'react';
 
 const Navbar: React.FC = () => {
   return (
-    <nav className="bg-gray-800 text-white flex items-center justify-between px-6 py-3">
+    <nav className="bg-gray-800 text-white flex items-center justify-between px-6 py-3" style={{ backgroundColor: '#202424' }}>
       <div className="flex items-center">
         <img src="/logo.png" alt="Logo" className="h-8 mr-4" />
         <h1 className="text-xl font-bold">TaskFlow</h1>
