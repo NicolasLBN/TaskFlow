@@ -1,13 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../layouts/Navbar';
-import { getAllProjects, getAllUsers, Project, User } from '../services/api';
+import { getAllProjects, getAllUsers, getUserData, Project, User } from '../services/api';
 import axios from 'axios';
 import { jwtDecode } from 'jwt-decode';
 
-interface CurrentUser {
-  username: string;
-  email: string;
-}
 
 interface DecodedToken {
   sub: string; // ID de l'utilisateur
@@ -17,29 +13,35 @@ interface DecodedToken {
 
 
 const HomePage: React.FC = () => {
-  const [users, setUsers] = useState<User[]>([]); // State to store fetched users
+  const [currentUserName, setCurrentUsername] = useState<string>('');
   const [projects, setProjects] = useState<Project[]>([]); // State to store fetched projects
+  const [userProjects, setUserProjects] = useState<Project[]>([]); // State to store fetched projects
+  const [currentUserTeamMembers, setcurrentUserTeamMembers] = useState<User[]>([]); // State to store fetched projects
+
+
   const [loading, setLoading] = useState<boolean>(true); // State to manage loading
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         // Fetch users, projects, and current user in parallel
-        const [usersResponse, projectsResponse] = await Promise.all([
-          getAllUsers(),
-          getAllProjects()
+        const [projectsResponse, currentUserDataResponse] = await Promise.all([
+          getAllProjects(),
+          getUserData()
         ]);
 
-        const usersData = usersResponse.users; // Adjust based on your API response structure
         const projectsData = projectsResponse.projects; // Adjust based on your API response structure
+        const currentUserData = currentUserDataResponse; // Adjust based on your API response structure
 
         // Update states
-        setUsers(usersData);
         setProjects(projectsData);
+        setcurrentUserTeamMembers(currentUserData.teamMembers); // Assuming teamMembers is part of the current user data
+        setUserProjects(currentUserData.projects); // Assuming projects is part of the current user data
 
         const tokenValue = localStorage.getItem('authToken') || '';
         console.log('Token:', tokenValue); // Display the token value
         const decoded: DecodedToken = jwtDecode(tokenValue); // Décoder le token
+        setCurrentUsername(decoded.username); // Set the username from the decoded token
 
         console.log(decoded); // Display username from the token
 
@@ -61,14 +63,25 @@ const HomePage: React.FC = () => {
 
   return (
     <div>
-      <Navbar />
-      <main className="bg-gray-100 min-h-screen p-6">
-        <h1 className="text-3xl font-bold text-gray-800 mb-4">Welcome to TaskFlow</h1>
-        
-        <p className="text-gray-600 text-lg">
-          Organize your tasks and projects efficiently with our Kanban board.
-        </p>
-      </main>
+      <Navbar /> {/* Insert the Navbar component here */}
+      <h1>Welcome to TaskFlow</h1>
+      {currentUserName && <p>Welcome, {currentUserName}!</p>}
+
+      <h2>Your Projects</h2>
+      <ul>
+        {userProjects.map((project, index) => (
+          <li key={index}>
+            <strong>{project.name}</strong>: {project.description}
+          </li>
+        ))}
+      </ul>
+
+      <h2>Your Team Members</h2>
+      <ul>
+        {currentUserTeamMembers.map((member) => (
+          <li key={member.username}>{member.username}</li>
+        ))}
+      </ul>
     </div>
   );
 };
