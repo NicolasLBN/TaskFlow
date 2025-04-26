@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
 import { loginUser, registerUser, User} from '../services/api'; // Import des services API
 import { useAuth } from '../context/AuthProvider';
 
@@ -9,7 +10,7 @@ const LoginSignUpPage: React.FC = () => {
   const [error, setError] = useState<string | null>('');
   const [success, setSuccess] = useState<string | null>('');
   const { setToken } = useAuth();
-
+  const navigate = useNavigate(); // Initialize useNavigate
 
   const toggleForm = () => {
     setIsLogin(!isLogin);
@@ -33,6 +34,8 @@ const LoginSignUpPage: React.FC = () => {
         localStorage.setItem('authToken', response.token);
 
         setSuccess('Login successful');
+        navigate('/home');
+        
       } else {
         const response = await registerUser({ username, password });
         console.log('API Response:', response);
