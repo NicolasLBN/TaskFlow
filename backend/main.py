@@ -4,6 +4,15 @@ from passlib.context import CryptContext
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
+import logging
+
+# Configuration de base du logger
+logging.basicConfig(
+    level=logging.INFO,  # Niveau de log (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
+)
+logger = logging.getLogger(__name__)  # Créez un logger pour ce module
+logger.info("Logger is working correctly!")
 
 app = FastAPI()
 
@@ -87,15 +96,6 @@ class Task(BaseModel):
     user_id: int
     project_id: int
 
-# REST Methods for Users
-@app.post("/users/")
-async def create_user(user: User):
-    try:
-        cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (user.username, user.password))
-        conn.commit()
-    except sqlite3.IntegrityError:
-        raise HTTPException(status_code=400, detail="Username already exists")
-    return {"message": "User created successfully", "user": user}
 
 # REST Methods for Projects
 @app.post("/projects/")
@@ -164,20 +164,40 @@ def verify_password(plain_password: str, hashed_password: str) -> bool:
     return pwd_context.verify(plain_password, hashed_password)
 
 # REST Methods
+
+class RegisterRequest(BaseModel):
+    username: str
+    password: str
+
 @app.post("/register/")
-async def register_user(username: str, password: str):
+async def register_user(request: RegisterRequest):
+    username = request.username
+    password = request.password
     hashed_password = hash_password(password)
     try:
         cursor.execute("INSERT INTO users (username, password) VALUES (?, ?)", (username, hashed_password))
         conn.commit()
     except sqlite3.IntegrityError:
+        logger.warning(f"Failed register in attempt for user: {username}")
         raise HTTPException(status_code=400, detail="Username already exists")
+    logger.info(f"User {username} register in successfully")
     return {"message": "User registered successfully"}
 
+
+
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
 @app.post("/login/")
-async def login_user(username: str, password: str):
+async def login_user(request: LoginRequest):
+    username = request.username
+    password = request.password
+    logger.info(f"Attempting to log in user: {username}")
     cursor.execute("SELECT password FROM users WHERE username = ?", (username,))
     user = cursor.fetchone()
     if not user or not verify_password(password, user[0]):
+        logger.warning(f"Failed login attempt for user: {username}")
         raise HTTPException(status_code=401, detail="Invalid username or password")
+    logger.info(f"User {username} logged in successfully")
     return {"message": "Login successful"}
