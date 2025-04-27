@@ -1,15 +1,15 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../layouts/Navbar';
 import { getAllProjects, getUserData, assignUserToProject, removeUserFromProject, Project, User, Task } from '../services/api';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import ProjectCard from '../components/Card/ProjectCard'; // Import the ProjectCard component
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 
 export interface DecodedToken {
-  sub: string; // ID de l'utilisateur
-  username: string; // Nom d'utilisateur
-  exp: number; // Expiration du token
+  sub: string; // User's ID
+  username: string; // Username
+  exp: number; // Token expiration time
 }
 
 const HomePage: React.FC = () => {
@@ -28,7 +28,7 @@ const HomePage: React.FC = () => {
       const currentSessionUser: User = {
         id: Number(decoded.sub),
         username: decoded.username,
-        password: '', // Le mot de passe n'est pas nécessaire ici
+        password: '', // Password is not required here
       } as User;
       setcurrentUser(currentSessionUser);
 
@@ -41,21 +41,21 @@ const HomePage: React.FC = () => {
         setProjects(projectsResponse.projects);
         console.log("All Projects:", projectsResponse.projects); // Debug the user projects
 
-              // Déterminer les projets auxquels l'utilisateur participe
-      const userProjects = projectsResponse.projects.filter((project: Project) =>
-        project.users?.some((user) => user.id === currentSessionUser.id)
-      );
+        // Determine the projects that the user is part of
+        const userProjects = projectsResponse.projects.filter((project: Project) =>
+          project.users?.some((user) => user.id === currentSessionUser.id)
+        );
 
-      console.log("User Projects:", userProjects); // Debug the user projects
+        console.log("User Projects:", userProjects); // Debug the user projects
 
-      // Déterminer les projets auxquels l'utilisateur ne participe pas
-      const otherProjects = projectsResponse.projects.filter((project: Project) =>
-        !project.users?.some((user) => user.id === currentSessionUser.id)
-      );
-      console.log("Other Projects:", otherProjects); // Debug the user projects
+        // Determine the projects the user is not part of
+        const otherProjects = projectsResponse.projects.filter((project: Project) =>
+          !project.users?.some((user) => user.id === currentSessionUser.id)
+        );
+        console.log("Other Projects:", otherProjects); // Debug the user projects
 
-      setUserProjects(userProjects);
-      setOtherProjects(otherProjects);
+        setUserProjects(userProjects);
+        setOtherProjects(otherProjects);
 
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -67,24 +67,24 @@ const HomePage: React.FC = () => {
     fetchData();
   }, []);
 
+  // Handle joining a project
   const handleJoinProject = async (projectId: number) => {
     try {
-      // Appeler l'API pour rejoindre le projet
-      await assignUserToProject(projectId, currentUser.id!);
+      await assignUserToProject(projectId, currentUser.id!); // Assign user to project
       console.log(`User ${currentUser.id} joined project ${projectId}`);
   
-      // Trouver le projet ajouté
+      // Find the newly joined project
       const joinedProject = projects.find((p) => p.id === projectId);
       if (!joinedProject) {
         console.error(`Project with ID ${projectId} not found`);
         return;
       }
   
-      // Ajouter le projet à userProjects
+      // Add the project to userProjects
       const updatedUserProjects = [...userProjects, joinedProject];
       setUserProjects(updatedUserProjects);
   
-      // Retirer le projet de otherProjects
+      // Remove the project from otherProjects
       const updatedOtherProjects = otherProjects.filter((project) => project.id !== projectId);
       setOtherProjects(updatedOtherProjects);
     } catch (error) {
@@ -92,17 +92,17 @@ const HomePage: React.FC = () => {
     }
   };
 
+  // Handle leaving a project
   const handleLeaveProject = async (projectId: number) => {
     try {
-      // Appeler l'API pour quitter le projet
-      await removeUserFromProject(projectId, currentUser.id!);
+      await removeUserFromProject(projectId, currentUser.id!); // Remove user from project
       console.log(`User ${currentUser.id} left project ${projectId}`);
   
-      // Retirer le projet de userProjects
+      // Remove the project from userProjects
       const updatedUserProjects = userProjects.filter((project) => project.id !== projectId);
       setUserProjects(updatedUserProjects);
   
-      // Ajouter le projet à otherProjects
+      // Add the project to otherProjects
       const leftProject = projects.find((p) => p.id === projectId);
       if (leftProject) {
         const updatedOtherProjects = [...otherProjects, leftProject];
@@ -113,7 +113,7 @@ const HomePage: React.FC = () => {
     }
   };
 
-
+  // Navigate to Kanban board
   const handleGoToBoard = (projectId: number, tasks: Task[], currentUser: User) => {
     navigate(`/kanban/${projectId}`, { state: { tasks, currentUser } }); // Pass tasks as state
   };
@@ -122,44 +122,52 @@ const HomePage: React.FC = () => {
     return <p>Loading...</p>;
   }
 
-
   return (
     <div>
       <Navbar />
-      <h1>Welcome to TaskFlow</h1>
-      {currentUser && <p>Welcome, {currentUser.username}!</p>}
+      <h1 className="text-4xl font-bold text-center my-8">Welcome to TaskFlow</h1>
 
-      <h2>Your Projects</h2>
-      <div>
-        {userProjects && userProjects.length > 0 ? (
-          userProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              members={project.users || []} // Pas besoin de membres pour les projets auxquels l'utilisateur participe
-              onLeave={handleLeaveProject}
-              onGoToBoard={ () => handleGoToBoard(project.id, project.tasks || [], currentUser)} // Passer la fonction "Go to Board"
-            />
-          ))
-        ) : (
-          <p>No projects available.</p>
-        )}
+      {currentUser && <p className="text-center mb-8 text-xl">Welcome, {currentUser.username}!</p>}
+
+      {/* Your Projects Section */}
+      <div className="mx-auto max-w-6xl px-10">
+        <h2 className="text-3xl font-semibold text-left mb-4">Your Projects</h2>
+        <hr className="mb-8 border-t-2 border-gray-300" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {userProjects && userProjects.length > 0 ? (
+            userProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                members={project.users || []}
+                onLeave={handleLeaveProject}
+                onGoToBoard={() => handleGoToBoard(project.id, project.tasks || [], currentUser)} 
+              />
+            ))
+          ) : (
+            <p>No projects available.</p>
+          )}
+        </div>
       </div>
 
-      <h2>Other Projects</h2>
-      <div>
-        {otherProjects && otherProjects.length > 0 ? (
-          otherProjects.map((project) => (
-            <ProjectCard
-              key={project.id}
-              project={project}
-              members={(project.users || []).filter(user => user.id !== currentUser.id)} // Pas besoin de membres pour les projets auxquels l'utilisateur participe
-              onJoin={handleJoinProject} // Passer la fonction "Join"
-            />
-          ))
-        ) : (
-          <p>No other projects available.</p>
-        )}
+      {/* Other Projects Section */}
+      <div className="mx-auto max-w-6xl px-10 mt-12">
+        <h2 className="text-3xl font-semibold text-left mb-4">Other Projects</h2>
+        <hr className="mb-8 border-t-2 border-gray-300" />
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6">
+          {otherProjects && otherProjects.length > 0 ? (
+            otherProjects.map((project) => (
+              <ProjectCard
+                key={project.id}
+                project={project}
+                members={(project.users || []).filter(user => user.id !== currentUser.id)} 
+                onJoin={handleJoinProject}
+              />
+            ))
+          ) : (
+            <p>No other projects available.</p>
+          )}
+        </div>
       </div>
     </div>
   );

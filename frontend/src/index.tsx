@@ -9,8 +9,10 @@ const root = ReactDOM.createRoot(
 );
 root.render(
   <AuthProvider>
-  <App />
-</AuthProvider>,
+    <div className="bg-[rgb(32,36,36)] min-h-screen text-[#b6c2c4]">  
+      <App />
+    </div>
+  </AuthProvider>,
 );
 
 // If you want to start measuring performance in your app, pass a function
