@@ -6,7 +6,7 @@ import ProjectCard from '../components/Card/ProjectCard'; // Import the ProjectC
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
 
 
-interface DecodedToken {
+export interface DecodedToken {
   sub: string; // ID de l'utilisateur
   username: string; // Nom d'utilisateur
   exp: number; // Expiration du token
@@ -114,8 +114,8 @@ const HomePage: React.FC = () => {
   };
 
 
-  const handleGoToBoard = (projectId: number, tasks: Task[]) => {
-    navigate(`/kanban/${projectId}`, { state: { tasks } }); // Pass tasks as state
+  const handleGoToBoard = (projectId: number, tasks: Task[], currentUser: User) => {
+    navigate(`/kanban/${projectId}`, { state: { tasks, currentUser } }); // Pass tasks as state
   };
 
   if (loading) {
@@ -138,7 +138,7 @@ const HomePage: React.FC = () => {
               project={project}
               members={project.users || []} // Pas besoin de membres pour les projets auxquels l'utilisateur participe
               onLeave={handleLeaveProject}
-              onGoToBoard={ () => handleGoToBoard(project.id, project.tasks || [])} // Passer la fonction "Go to Board"
+              onGoToBoard={ () => handleGoToBoard(project.id, project.tasks || [], currentUser)} // Passer la fonction "Go to Board"
             />
           ))
         ) : (
