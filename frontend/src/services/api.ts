@@ -85,8 +85,12 @@ export const updateTaskStatus = async (taskId: number, status: string) => {
   return response.data;
 };
 
-export const getAllTasks = async () => {
-  const response = await axios.get(`${API_URL}/tasks/`);
+export const getAllTasksByProjectId = async (projectId: number) => {
+  console.log(`Fetching all tasks for project ID: ${projectId}`);
+  const response = await axios.get(`${API_URL}/tasks`, {
+    params: { project_id: projectId },
+  });
+  console.log("Tasks fetched successfully:", response.data);
   return response.data;
 };
 

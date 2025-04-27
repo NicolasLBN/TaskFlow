@@ -1,7 +1,7 @@
 import os
 import sqlite3
 from passlib.context import CryptContext
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
 import logging
@@ -25,6 +25,34 @@ logger.info("Logger is working correctly!")
 
 app = FastAPI()
 
+class ConnectionManager:
+    def __init__(self):
+        self.active_connections: List[WebSocket] = []
+
+    async def connect(self, websocket: WebSocket):
+        await websocket.accept()
+        self.active_connections.append(websocket)
+
+    def disconnect(self, websocket: WebSocket):
+        self.active_connections.remove(websocket)
+
+    async def broadcast(self, message: dict):
+        for connection in self.active_connections:
+            await connection.send_json(message)
+
+manager = ConnectionManager()
+
+@app.websocket("/ws/kanban")
+async def websocket_endpoint(websocket: WebSocket):
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_json()
+            # Diffuser les mises à jour à tous les clients connectés
+            await manager.broadcast(data)
+    except WebSocketDisconnect:
+        manager.disconnect(websocket)
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["http://localhost:3000"],  # Replace with your frontend URL
@@ -38,6 +66,7 @@ os.makedirs("data", exist_ok=True)
 
 # Initialize SQLite
 conn = sqlite3.connect("data/taskflow.db", check_same_thread=False)
+conn.row_factory = sqlite3.Row  # Configure the connection to return rows as dictionaries
 cursor = conn.cursor()
 
 # Create the "users" table
@@ -88,10 +117,10 @@ CREATE TABLE IF NOT EXISTS user_projects (
 """)
 
 # Read and execute the SQL file
-with open("populate.sql", "r") as file:
+'''with open("populate.sql", "r") as file:
     sql_script = file.read()
     cursor.executescript(sql_script)
-conn.commit()
+conn.commit()'''
 
 # Models
 class User(BaseModel):
@@ -185,17 +214,17 @@ async def update_task_status(task_id: int, task_data: dict):
         logger.error(f"Error updating task {task_id}: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while updating the task")
 
-@app.get("/tasks/")
-async def read_tasks():
-    cursor.execute("""
-        SELECT tasks.id, tasks.title, tasks.description, tasks.status, users.username, projects.name
-        FROM tasks
-        LEFT JOIN users ON tasks.user_id = users.id
-        LEFT JOIN projects ON tasks.project_id = projects.id
-    """)
-    tasks = cursor.fetchall()
-    return {"tasks": tasks}
-
+@app.get("/tasks")
+async def get_all_tasks_by_project(project_id: int):
+    try:
+        print(f"Fetching all tasks for project_id: {project_id}")
+        cursor.execute("SELECT * FROM tasks WHERE project_id = ?", (project_id,))
+        tasks = cursor.fetchall()
+        return [dict(task) for task in tasks]  # Convert each row to a dictionary
+    except Exception as e:
+        logger.error(f"Error fetching tasks for project_id {project_id}: {e}")
+        raise HTTPException(status_code=500, detail="An error occurred while fetching tasks for the project")
+        
 @app.get("/projects/")
 async def get_all_projects():
     try:
