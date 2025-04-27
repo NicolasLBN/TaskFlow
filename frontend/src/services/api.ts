@@ -79,6 +79,11 @@ export const createTask = async (task: Task) => {
   return response.data;
 };
 
+export const updateTask = async (taskId: number, updatedTask: Partial<Task>): Promise<Task> => {
+  const response = await axios.put(`${API_URL}/tasks/${taskId}`, updatedTask);
+  return response.data;
+};
+
 export const updateTaskStatus = async (taskId: number, status: string) => {
   console.log("Updating task status:", { taskId, status }); // Debug the IDs
   const response = await axios.put(`${API_URL}/tasks/${taskId}`, { status, modifiedDate: new Date().toISOString() });
