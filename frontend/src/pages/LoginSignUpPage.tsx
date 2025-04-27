@@ -48,14 +48,14 @@ const LoginSignUpPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-100">
-      <div className="bg-white p-8 rounded shadow-md w-full max-w-md">
-        <h1 className="text-2xl font-bold text-gray-800 mb-6 text-center">
+    <div className="min-h-screen flex items-center justify-center  bg-[rgb(32,36,36)] text-[#b6c2c4]">
+      <div className="bg-[#3E3C3F] p-8 rounded-x1 shadow-md w-full max-w-md">
+        <h1 className="text-2xl font-bold text-[#b6c2c4] mb-6 text-center">
           {isLogin ? 'Login' : 'Sign Up'}
         </h1>
         <form onSubmit={handleSubmit}>
           <div className="mb-4">
-            <label htmlFor="username" className="block text-gray-700 font-medium mb-2">
+            <label htmlFor="username" className="block text-[#b6c2c4] font-medium mb-2">
               Username
             </label>
             <input
@@ -63,13 +63,13 @@ const LoginSignUpPage: React.FC = () => {
               id="username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               placeholder="Enter your username"
               required
             />
           </div>
           <div className="mb-4">
-            <label htmlFor="password" className="block text-gray-700 font-medium mb-2">
+            <label htmlFor="password" className="block text-[#b6c2c4] font-medium mb-2">
               Password
             </label>
             <input
@@ -77,7 +77,7 @@ const LoginSignUpPage: React.FC = () => {
               id="password"
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-4 py-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 text-black"
               placeholder="Enter your password"
               required
             />
@@ -91,11 +91,11 @@ const LoginSignUpPage: React.FC = () => {
         </form>
         {error && <p className="text-red-500 text-center mt-4">{error}</p>}
         {success && <p className="text-green-500 text-center mt-4">{success}</p>}
-        <p className="text-center text-gray-600 mt-4">
+        <p className="text-center text-[#b6c2c4] mt-4">
           {isLogin ? "Don't have an account?" : 'Already have an account?'}{' '}
           <button
             onClick={toggleForm}
-            className="text-blue-500 hover:underline focus:outline-none"
+            className="text-[#b6c2c4] hover:underline focus:outline-none font-bold"
           >
             {isLogin ? 'Sign Up' : 'Login'}
           </button>

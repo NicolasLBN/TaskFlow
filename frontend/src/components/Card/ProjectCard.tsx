@@ -42,7 +42,7 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, members, onJoin, onL
       {onGoToBoard && (
         <button
           onClick={() => onGoToBoard()}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-green-600 ml-4"
+          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 ml-4"
         >
           Go to Board
         </button>
