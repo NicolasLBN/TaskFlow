@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { getAllTasksByProjectId, updateTaskStatus, Task } from '../services/api'; // Add a function to fetch tasks
+import { getAllTasksByProjectId, Task, updateTask } from '../services/api'; // Add a function to fetch tasks
 import Navbar from '../layouts/Navbar';
 import Column from '../components/Board/Column';
+import Modal from '../components/Board/Modal';
 
 const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
   const [columns, setColumns] = useState({
@@ -9,6 +10,8 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
     inProgress: [] as Task[],
     done: [] as Task[],
   });
+  const [selectedTask, setSelectedTask] = useState<Task | null>(null); // State for the selected task
+  const [isModalOpen, setIsModalOpen] = useState(false); // State for modal visibility
 
   useEffect(() => {
     // Fetch tasks from the backend on mount
@@ -70,7 +73,7 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
     event.dataTransfer.setData('fromColumn', column);
   };
 
-  const handleDrop = (event: React.DragEvent, targetColumn: 'todo' | 'inProgress' | 'done') => {
+  const handleDrop = async (event: React.DragEvent, targetColumn: 'todo' | 'inProgress' | 'done') => {
     const task = JSON.parse(event.dataTransfer.getData('task')) as Task;
     const fromColumn = event.dataTransfer.getData('fromColumn') as 'todo' | 'inProgress' | 'done';
   
@@ -88,16 +91,35 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
       };
     });
   
-    // Update task status in the database
-    const updatedTask = { ...task, status: targetColumn };
-    updateTaskStatus(task.id, targetColumn).catch((error) => {
-      console.error('Error updating task status:', error);
-    });
+    // Update task in the database
+    try {
+      await updateTask(task.id, {
+        title: task.title, // Ensure title is included
+        description: task.description,
+        status: targetColumn, // Update the status to the target column
+      });
+      console.log(`Task ${task.id} updated successfully to ${targetColumn}`);
+    } catch (error) {
+      console.error(`Error updating task ${task.id}:`, error);
+      alert('Failed to update the task. Please try again.');
+    }
   };
 
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
   };
+
+  const handleTaskClick = (task: Task) => {
+    setSelectedTask(task); // Set the selected task
+    console.log(task)
+    setIsModalOpen(true); // Open the modal
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false); // Close the modal
+    setSelectedTask(null); // Clear the selected task
+  };
+
 
   return (
     <div>
@@ -110,6 +132,7 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
           onDragStart={(event, task) => handleDragStart(event, task, 'todo')}
           onDrop={(event) => handleDrop(event, 'todo')}
           onDragOver={handleDragOver}
+          onTaskClick={handleTaskClick} // Pass the click handler
         />
         <Column
           title="In Progress"
@@ -117,6 +140,8 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
           onDragStart={(event, task) => handleDragStart(event, task, 'inProgress')}
           onDrop={(event) => handleDrop(event, 'inProgress')}
           onDragOver={handleDragOver}
+          onTaskClick={handleTaskClick} // Pass the click handler
+
         />
         <Column
           title="Done"
@@ -124,8 +149,36 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
           onDragStart={(event, task) => handleDragStart(event, task, 'done')}
           onDrop={(event) => handleDrop(event, 'done')}
           onDragOver={handleDragOver}
+          onTaskClick={handleTaskClick} // Pass the click handler
         />
       </div>
+      <Modal
+        isOpen={isModalOpen}
+        onClose={closeModal}
+        task={selectedTask}
+        onSave={(updatedTask) => {
+          // Update the task in the columns state
+          setColumns((prevColumns) => {
+            const fromColumn = Object.keys(prevColumns).find((key) =>
+              prevColumns[key as keyof typeof prevColumns].some((task) => task.id === updatedTask.id)
+            );
+
+            if (!fromColumn) return prevColumns;
+
+            const updatedFromColumn = prevColumns[fromColumn as keyof typeof prevColumns].map((task) =>
+              task.id === updatedTask.id ? updatedTask : task
+            );
+
+            return {
+              ...prevColumns,
+              [fromColumn]: updatedFromColumn,
+            };
+          });
+
+          closeModal(); // Close the modal after saving
+        }}
+      />
+
     </div>
   );
 };
