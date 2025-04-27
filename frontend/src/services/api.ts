@@ -8,7 +8,6 @@ export interface User {
   id?: number; // Optional for registration
   username: string;
   password: string;
-  tasks?: Task[]; // Optional for registration
 }
 
 export interface Project {
@@ -16,14 +15,19 @@ export interface Project {
   name: string;
   description: string;
   users?: User[]; // Optional for registration
+  tasks?: Task[]; // Optional for registration
 }
 
 export interface Task {
+  id: number;
+  project_id: number;
   title: string;
   description: string;
   status?: string;
-  user_id: number;
-  project_id: number;
+  assignedUser: User;
+  createdBy: User;
+  createdDate: string;
+  modifiedDate: string;
 }
 
 // API Calls
@@ -72,6 +76,12 @@ export const removeUserFromProject = async (projectId: number, userId: number) =
 // Tasks
 export const createTask = async (task: Task) => {
   const response = await axios.post(`${API_URL}/tasks/`, task);
+  return response.data;
+};
+
+export const updateTaskStatus = async (taskId: number, status: string) => {
+  console.log("Updating task status:", { taskId, status }); // Debug the IDs
+  const response = await axios.put(`${API_URL}/tasks/${taskId}`, { status, modifiedDate: new Date().toISOString() });
   return response.data;
 };
 

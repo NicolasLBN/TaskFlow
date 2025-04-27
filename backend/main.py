@@ -62,13 +62,17 @@ CREATE TABLE IF NOT EXISTS projects (
 cursor.execute("""
 CREATE TABLE IF NOT EXISTS tasks (
     id INTEGER PRIMARY KEY AUTOINCREMENT,
+    project_id INTEGER NOT NULL,
     title TEXT NOT NULL,
     description TEXT NOT NULL,
     status TEXT DEFAULT 'To Do',
-    user_id INTEGER,
-    project_id INTEGER,
-    FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (project_id) REFERENCES projects (id)
+    assigned_user_id INTEGER, -- Foreign key for the assigned user
+    created_by INTEGER NOT NULL, -- Foreign key for the user who created the task
+    created_date TEXT NOT NULL, -- ISO 8601 format
+    modified_date TEXT NOT NULL, -- ISO 8601 format
+    FOREIGN KEY (project_id) REFERENCES projects (id),
+    FOREIGN KEY (assigned_user_id) REFERENCES users (id),
+    FOREIGN KEY (created_by) REFERENCES users (id)
 )
 """)
 
@@ -161,6 +165,26 @@ async def create_task(task: Task):
     conn.commit()
     return {"message": "Task created successfully", "task": task}
 
+@app.put("/tasks/{task_id}")
+async def update_task_status(task_id: int, task_data: dict):
+    try:
+        status = task_data.get("status")
+        modified_date = task_data.get("modifiedDate")
+
+        if not status or not modified_date:
+            raise HTTPException(status_code=400, detail="Invalid data")
+
+        cursor.execute(
+            "UPDATE tasks SET status = ?, modified_date = ? WHERE id = ?",
+            (status, modified_date, task_id),
+        )
+        conn.commit()
+
+        return {"message": f"Task {task_id} updated successfully"}
+    except Exception as e:
+        logger.error(f"Error updating task {task_id}: {e}")
+        raise HTTPException(status_code=500, detail="An error occurred while updating the task")
+
 @app.get("/tasks/")
 async def read_tasks():
     cursor.execute("""
@@ -175,47 +199,55 @@ async def read_tasks():
 @app.get("/projects/")
 async def get_all_projects():
     try:
-        # Récupérer tous les projets
+        # Fetch all projects
         cursor.execute("SELECT * FROM projects")
         projects = cursor.fetchall()
 
-        # Construire la réponse avec les utilisateurs et leurs tâches
         project_list = []
         for project in projects:
             project_id, name, description = project
 
-            # Récupérer les utilisateurs rattachés au projet
+            # Fetch users associated with the project
             cursor.execute("""
                 SELECT u.id, u.username FROM users u
                 JOIN user_projects up ON u.id = up.user_id
                 WHERE up.project_id = ?
             """, (project_id,))
-            users = cursor.fetchall()
+            users = [{"id": user[0], "username": user[1]} for user in cursor.fetchall()]
 
-            # Ajouter les tâches pour chaque utilisateur
-            user_list = []
-            for user in users:
-                user_id, username = user
-                cursor.execute("""
-                    SELECT id, title, description, status FROM tasks
-                    WHERE user_id = ? AND project_id = ?
-                """, (user_id, project_id))
-                tasks = cursor.fetchall()
+            # Fetch tasks associated with the project
+            cursor.execute("""
+                SELECT t.id, t.project_id, t.title, t.description, t.status, 
+                       t.assigned_user_id, t.created_by, t.created_date, t.modified_date,
+                       au.username AS assigned_user_name,
+                       cu.username AS created_by_name
+                FROM tasks t
+                LEFT JOIN users au ON t.assigned_user_id = au.id
+                LEFT JOIN users cu ON t.created_by = cu.id
+                WHERE t.project_id = ?
+            """, (project_id,))
+            tasks = [
+                {
+                    "id": task[0],
+                    "project_id": task[1],
+                    "title": task[2],
+                    "description": task[3],
+                    "status": task[4],
+                    "assignedUser": {"id": task[5], "username": task[9]} if task[5] else None,
+                    "createdBy": {"id": task[6], "username": task[10]},
+                    "createdDate": task[7],
+                    "modifiedDate": task[8],
+                }
+                for task in cursor.fetchall()
+            ]
 
-                user_list.append({
-                    "id": user_id,
-                    "username": username,
-                    "tasks": [
-                        {"id": task[0], "title": task[1], "description": task[2], "status": task[3]}
-                        for task in tasks
-                    ]
-                })
-
+            # Add the project to the list
             project_list.append({
                 "id": project_id,
                 "name": name,
                 "description": description,
-                "users": user_list
+                "users": users,
+                "tasks": tasks,
             })
 
         return {"projects": project_list}
