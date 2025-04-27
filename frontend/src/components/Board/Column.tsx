@@ -15,16 +15,9 @@ const Column: React.FC<ColumnProps> = ({ title, tasks, onDragStart, onDrop, onDr
     <div
       onDrop={onDrop}
       onDragOver={onDragOver}
-      style={{
-        flex: 1,
-        padding: '16px',
-        border: '1px solid #ccc',
-        borderRadius: '8px',
-        backgroundColor: '#f9f9f9',
-        minHeight: '400px',
-      }}
+      className="flex-1 p-4 border border-gray-300 rounded-lg bg-[#28242c] min-h-[400px]"
     >
-      <h2 style={{ textAlign: 'center', marginBottom: '16px' }}>{title}</h2>
+      <h2 className="text-center mb-4 text-xl font-semibold">{title}</h2>
       {tasks.length > 0 ? (
         tasks.map((task) => (
           <div
@@ -32,21 +25,14 @@ const Column: React.FC<ColumnProps> = ({ title, tasks, onDragStart, onDrop, onDr
             draggable
             onDragStart={(event) => onDragStart(event, task)}
             onClick={() => onTaskClick(task)} // Trigger the onTaskClick handler when a task is clicked
-            style={{
-              padding: '8px',
-              marginBottom: '8px',
-              border: '1px solid #ddd',
-              borderRadius: '4px',
-              backgroundColor: '#fff',
-              cursor: 'pointer', // Change cursor to pointer for better UX
-            }}
+            className="p-2 mb-2 border border-gray-300 rounded-md bg-[#3E3C3F] cursor-pointer"
           >
-            <h4>{task.title}</h4>
-            <p>{task.description}</p>
+            <h4 className="text-lg font-medium">{task.title}</h4>
+            <p className="text-sm">{task.description}</p>
           </div>
         ))
       ) : (
-        <p style={{ textAlign: 'center', color: '#888' }}>No tasks</p>
+        <p className="text-center text-gray-500">No tasks</p>
       )}
     </div>
   );

@@ -18,25 +18,16 @@ const TaskCard: React.FC<TaskCardProps> = ({
   modifiedDate,
 }) => {
   return (
-    <div
-      style={{
-        border: '1px solid #ddd',
-        borderRadius: '8px',
-        padding: '16px',
-        marginBottom: '16px',
-        backgroundColor: '#fff',
-        boxShadow: '0 2px 4px rgba(0, 0, 0, 0.1)',
-      }}
-    >
-      <h3 style={{ marginBottom: '8px' }}>{title}</h3>
-      <p style={{ marginBottom: '8px', color: '#555' }}>{description}</p>
-      <p style={{ marginBottom: '8px' }}>
+    <div className="border border-gray-300 rounded-lg p-4 mb-4 bg-white shadow-md">
+      <h3 className="mb-2 text-xl font-semibold">{title}</h3>
+      <p className="mb-2 text-gray-600">{description}</p>
+      <p className="mb-2">
         <strong>Assigned to:</strong> {assignedPerson}
       </p>
-      <p style={{ marginBottom: '8px' }}>
+      <p className="mb-2">
         <strong>Created:</strong> {new Date(createdDate).toLocaleDateString()}
       </p>
-      <p style={{ marginBottom: '8px' }}>
+      <p className="mb-2">
         <strong>Last Modified:</strong> {new Date(modifiedDate).toLocaleDateString()}
       </p>
     </div>
