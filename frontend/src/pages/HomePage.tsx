@@ -1,8 +1,10 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../layouts/Navbar';
-import { getAllProjects, getUserData, assignUserToProject, removeUserFromProject, Project, User } from '../services/api';
+import { getAllProjects, getUserData, assignUserToProject, removeUserFromProject, Project, User, Task } from '../services/api';
 import {jwtDecode} from 'jwt-decode';
 import ProjectCard from '../components/Card/ProjectCard'; // Import the ProjectCard component
+import { useNavigate } from 'react-router-dom'; // Import useNavigate
+
 
 interface DecodedToken {
   sub: string; // ID de l'utilisateur
@@ -16,6 +18,8 @@ const HomePage: React.FC = () => {
   const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [otherProjects, setOtherProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const navigate = useNavigate(); // Initialize useNavigate
+
 
   useEffect(() => {
     const fetchData = async () => {
@@ -109,6 +113,11 @@ const HomePage: React.FC = () => {
     }
   };
 
+
+  const handleGoToBoard = (projectId: number, tasks: Task[]) => {
+    navigate(`/kanban/${projectId}`, { state: { tasks } }); // Pass tasks as state
+  };
+
   if (loading) {
     return <p>Loading...</p>;
   }
@@ -129,6 +138,7 @@ const HomePage: React.FC = () => {
               project={project}
               members={project.users || []} // Pas besoin de membres pour les projets auxquels l'utilisateur participe
               onLeave={handleLeaveProject}
+              onGoToBoard={ () => handleGoToBoard(project.id, project.tasks || [])} // Passer la fonction "Go to Board"
             />
           ))
         ) : (

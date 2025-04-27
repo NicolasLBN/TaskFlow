@@ -6,9 +6,10 @@ interface ProjectCardProps {
   members: User[];
   onJoin?: (projectId: number) => void; // Callback pour le bouton "Join"
   onLeave?: (projectId: number) => void; // Callback pour le bouton "Leave"
+  onGoToBoard?: () => void; // Callback pour le bouton "Go to Board" 
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, members, onJoin, onLeave }) => {
+const ProjectCard: React.FC<ProjectCardProps> = ({ project, members, onJoin, onLeave, onGoToBoard }) => {
   return (
     <div style={{ border: '1px solid #ccc', padding: '16px', marginBottom: '16px', borderRadius: '8px' }}>
       <h3>{project.name}</h3>
@@ -49,6 +50,22 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, members, onJoin, onL
           }}
         >
           Leave
+        </button>
+      )}
+    {onGoToBoard && (
+        <button
+          onClick={() => onGoToBoard()}
+          style={{
+            marginTop: '8px',
+            padding: '8px 16px',
+            backgroundColor: '#007bff',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '4px',
+            cursor: 'pointer',
+          }}
+        >
+          Go to Board
         </button>
       )}
     </div>
