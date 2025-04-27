@@ -1,9 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../layouts/Navbar';
-import { getAllProjects, getAllUsers, getUserData, Project, User } from '../services/api';
-import axios from 'axios';
-import { jwtDecode } from 'jwt-decode';
-
+import { getAllProjects, getUserData, assignUserToProject, removeUserFromProject, Project, User } from '../services/api';
+import {jwtDecode} from 'jwt-decode';
+import ProjectCard from '../components/Card/ProjectCard'; // Import the ProjectCard component
 
 interface DecodedToken {
   sub: string; // ID de l'utilisateur
@@ -11,77 +10,147 @@ interface DecodedToken {
   exp: number; // Expiration du token
 }
 
-
 const HomePage: React.FC = () => {
-  const [currentUserName, setCurrentUsername] = useState<string>('');
-  const [projects, setProjects] = useState<Project[]>([]); // State to store fetched projects
-  const [userProjects, setUserProjects] = useState<Project[]>([]); // State to store fetched projects
-  const [currentUserTeamMembers, setcurrentUserTeamMembers] = useState<User[]>([]); // State to store fetched projects
-
-
-  const [loading, setLoading] = useState<boolean>(true); // State to manage loading
+  const [currentUser, setcurrentUser] = useState<User>({} as User);
+  const [projects, setProjects] = useState<Project[]>([]);
+  const [userProjects, setUserProjects] = useState<Project[]>([]);
+  const [otherProjects, setOtherProjects] = useState<Project[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      const tokenValue = localStorage.getItem('authToken') || '';
+      const decoded: DecodedToken = jwtDecode(tokenValue);
+      const currentSessionUser: User = {
+        id: Number(decoded.sub),
+        username: decoded.username,
+        password: '', // Le mot de passe n'est pas nécessaire ici
+      } as User;
+      setcurrentUser(currentSessionUser);
+
       try {
-        // Fetch users, projects, and current user in parallel
         const [projectsResponse, currentUserDataResponse] = await Promise.all([
           getAllProjects(),
-          getUserData()
+          getUserData(Number(decoded.sub)),
         ]);
 
-        const projectsData = projectsResponse.projects; // Adjust based on your API response structure
-        const currentUserData = currentUserDataResponse; // Adjust based on your API response structure
+        setProjects(projectsResponse.projects);
+        console.log("All Projects:", projectsResponse.projects); // Debug the user projects
 
-        // Update states
-        setProjects(projectsData);
-        setcurrentUserTeamMembers(currentUserData.teamMembers); // Assuming teamMembers is part of the current user data
-        setUserProjects(currentUserData.projects); // Assuming projects is part of the current user data
+              // Déterminer les projets auxquels l'utilisateur participe
+      const userProjects = projectsResponse.projects.filter((project: Project) =>
+        project.users?.some((user) => user.id === currentSessionUser.id)
+      );
 
-        const tokenValue = localStorage.getItem('authToken') || '';
-        console.log('Token:', tokenValue); // Display the token value
-        const decoded: DecodedToken = jwtDecode(tokenValue); // Décoder le token
-        setCurrentUsername(decoded.username); // Set the username from the decoded token
+      console.log("User Projects:", userProjects); // Debug the user projects
 
-        console.log(decoded); // Display username from the token
+      // Déterminer les projets auxquels l'utilisateur ne participe pas
+      const otherProjects = projectsResponse.projects.filter((project: Project) =>
+        !project.users?.some((user) => user.id === currentSessionUser.id)
+      );
+      console.log("Other Projects:", otherProjects); // Debug the user projects
+
+      setUserProjects(userProjects);
+      setOtherProjects(otherProjects);
 
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
-        // Set loading to false after all calls are complete
         setLoading(false);
       }
     };
 
-    fetchData(); // Call the combined fetch function
-  }, []); // Empty dependency array ensures this runs only once
+    fetchData();
+  }, []);
+
+  const handleJoinProject = async (projectId: number) => {
+    try {
+      // Appeler l'API pour rejoindre le projet
+      await assignUserToProject(projectId, currentUser.id!);
+      console.log(`User ${currentUser.id} joined project ${projectId}`);
   
+      // Trouver le projet ajouté
+      const joinedProject = projects.find((p) => p.id === projectId);
+      if (!joinedProject) {
+        console.error(`Project with ID ${projectId} not found`);
+        return;
+      }
+  
+      // Ajouter le projet à userProjects
+      const updatedUserProjects = [...userProjects, joinedProject];
+      setUserProjects(updatedUserProjects);
+  
+      // Retirer le projet de otherProjects
+      const updatedOtherProjects = otherProjects.filter((project) => project.id !== projectId);
+      setOtherProjects(updatedOtherProjects);
+    } catch (error) {
+      console.error('Error joining project:', error);
+    }
+  };
+
+  const handleLeaveProject = async (projectId: number) => {
+    try {
+      // Appeler l'API pour quitter le projet
+      await removeUserFromProject(projectId, currentUser.id!);
+      console.log(`User ${currentUser.id} left project ${projectId}`);
+  
+      // Retirer le projet de userProjects
+      const updatedUserProjects = userProjects.filter((project) => project.id !== projectId);
+      setUserProjects(updatedUserProjects);
+  
+      // Ajouter le projet à otherProjects
+      const leftProject = projects.find((p) => p.id === projectId);
+      if (leftProject) {
+        const updatedOtherProjects = [...otherProjects, leftProject];
+        setOtherProjects(updatedOtherProjects);
+      }
+    } catch (error) {
+      console.error('Error leaving project:', error);
+    }
+  };
 
   if (loading) {
     return <p>Loading...</p>;
   }
 
+
   return (
     <div>
-      <Navbar /> {/* Insert the Navbar component here */}
+      <Navbar />
       <h1>Welcome to TaskFlow</h1>
-      {currentUserName && <p>Welcome, {currentUserName}!</p>}
+      {currentUser && <p>Welcome, {currentUser.username}!</p>}
 
       <h2>Your Projects</h2>
-      <ul>
-        {userProjects.map((project, index) => (
-          <li key={index}>
-            <strong>{project.name}</strong>: {project.description}
-          </li>
-        ))}
-      </ul>
+      <div>
+        {userProjects && userProjects.length > 0 ? (
+          userProjects.map((project) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              members={project.users || []} // Pas besoin de membres pour les projets auxquels l'utilisateur participe
+              onLeave={handleLeaveProject}
+            />
+          ))
+        ) : (
+          <p>No projects available.</p>
+        )}
+      </div>
 
-      <h2>Your Team Members</h2>
-      <ul>
-        {currentUserTeamMembers.map((member) => (
-          <li key={member.username}>{member.username}</li>
-        ))}
-      </ul>
+      <h2>Other Projects</h2>
+      <div>
+        {otherProjects && otherProjects.length > 0 ? (
+          otherProjects.map((project) => (
+            <ProjectCard
+              key={project.id}
+              project={project}
+              members={(project.users || []).filter(user => user.id !== currentUser.id)} // Pas besoin de membres pour les projets auxquels l'utilisateur participe
+              onJoin={handleJoinProject} // Passer la fonction "Join"
+            />
+          ))
+        ) : (
+          <p>No other projects available.</p>
+        )}
+      </div>
     </div>
   );
 };

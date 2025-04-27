@@ -12,7 +12,7 @@ import jwt
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
-SECRET_KEY = "wwedqwdqwsqsadqwdqwdqwdqwdqwdqwdqwdqwdqw"  # Change this to a secure random key
+SECRET_KEY = "YOUR_SECRET_KEY"  # Change this to a secure random key
 ALGORITHM = "HS256"
 
 # Configuration de base du logger
@@ -84,10 +84,10 @@ CREATE TABLE IF NOT EXISTS user_projects (
 """)
 
 # Read and execute the SQL file
-'''with open("populate.sql", "r") as file:
+with open("populate.sql", "r") as file:
     sql_script = file.read()
     cursor.executescript(sql_script)
-conn.commit()'''
+conn.commit()
 
 # Models
 class User(BaseModel):
@@ -122,6 +122,35 @@ async def assign_user_to_project(project_id: int, user_id: int):
         raise HTTPException(status_code=400, detail="User is already assigned to this project")
     return {"message": f"User {user_id} assigned to project {project_id}"}
 
+@app.delete("/projects/{project_id}/users/{user_id}")
+async def remove_user_from_project(project_id: int, user_id: int):
+    try:
+        # Vérifier si l'association existe
+        cursor.execute(
+            "SELECT * FROM user_projects WHERE user_id = ? AND project_id = ?",
+            (user_id, project_id),
+        )
+        association = cursor.fetchone()
+        if not association:
+            raise HTTPException(
+                status_code=404, detail="User is not assigned to this project"
+            )
+
+        # Supprimer l'association
+        cursor.execute(
+            "DELETE FROM user_projects WHERE user_id = ? AND project_id = ?",
+            (user_id, project_id),
+        )
+        conn.commit()
+
+        return {"message": f"User {user_id} removed from project {project_id}"}
+    except Exception as e:
+        logger.error(f"Error removing user {user_id} from project {project_id}: {e}")
+        raise HTTPException(
+            status_code=500, detail="An error occurred while removing the user from the project"
+        )
+
+
 # REST Methods for Tasks
 @app.post("/tasks/")
 async def create_task(task: Task):
@@ -145,13 +174,54 @@ async def read_tasks():
 
 @app.get("/projects/")
 async def get_all_projects():
-    cursor.execute("SELECT id, name, description FROM projects")
-    projects = cursor.fetchall()
-    return {
-        "projects": [
-            {"id": row[0], "name": row[1], "description": row[2]} for row in projects
-        ]
-    }
+    try:
+        # Récupérer tous les projets
+        cursor.execute("SELECT * FROM projects")
+        projects = cursor.fetchall()
+
+        # Construire la réponse avec les utilisateurs et leurs tâches
+        project_list = []
+        for project in projects:
+            project_id, name, description = project
+
+            # Récupérer les utilisateurs rattachés au projet
+            cursor.execute("""
+                SELECT u.id, u.username FROM users u
+                JOIN user_projects up ON u.id = up.user_id
+                WHERE up.project_id = ?
+            """, (project_id,))
+            users = cursor.fetchall()
+
+            # Ajouter les tâches pour chaque utilisateur
+            user_list = []
+            for user in users:
+                user_id, username = user
+                cursor.execute("""
+                    SELECT id, title, description, status FROM tasks
+                    WHERE user_id = ? AND project_id = ?
+                """, (user_id, project_id))
+                tasks = cursor.fetchall()
+
+                user_list.append({
+                    "id": user_id,
+                    "username": username,
+                    "tasks": [
+                        {"id": task[0], "title": task[1], "description": task[2], "status": task[3]}
+                        for task in tasks
+                    ]
+                })
+
+            project_list.append({
+                "id": project_id,
+                "name": name,
+                "description": description,
+                "users": user_list
+            })
+
+        return {"projects": project_list}
+    except Exception as e:
+        logger.error(f"Error fetching projects: {e}")
+        raise HTTPException(status_code=500, detail="An error occurred while fetching projects")
 
 @app.get("/users/")
 async def get_all_users():
@@ -229,23 +299,19 @@ async def login_user(request: LoginRequest):
     return {"token": access_token}
 
 @app.get("/user-data/")
-async def get_user_data(token: str = Depends(oauth2_scheme)):
+async def get_user_data(user_id: int):
     try:
-        # Décoder le token pour récupérer l'ID de l'utilisateur
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id = payload.get("sub")  # ID de l'utilisateur
-        if user_id is None:
-            raise HTTPException(status_code=401, detail="Invalid token")
+        logger.info(f"Fetching data for user_id: {user_id}")
 
         # Récupérer les projets de l'utilisateur
-        cursor.execute("SELECT * FROM projects WHERE id IN (SELECT project_id FROM project_users WHERE user_id = ?)", (user_id,))
+        cursor.execute("SELECT * FROM projects WHERE id IN (SELECT project_id FROM user_projects WHERE user_id = ?)", (user_id,))
         projects = cursor.fetchall()
 
         # Récupérer les membres de l'équipe
         cursor.execute("""
             SELECT u.id, u.username FROM users u
-            JOIN project_users pu ON u.id = pu.user_id
-            WHERE pu.project_id IN (SELECT project_id FROM project_users WHERE user_id = ?)
+            JOIN user_projects pu ON u.id = pu.user_id
+            WHERE pu.project_id IN (SELECT project_id FROM user_projects WHERE user_id = ?)
         """, (user_id,))
         team_members = cursor.fetchall()
 
@@ -253,7 +319,6 @@ async def get_user_data(token: str = Depends(oauth2_scheme)):
             "projects": [{"id": p[0], "name": p[1], "description": p[2]} for p in projects],
             "team_members": [{"id": m[0], "username": m[1]} for m in team_members]
         }
-    except jwt.ExpiredSignatureError:
-        raise HTTPException(status_code=401, detail="Token expired")
-    except jwt.JWTError:
-        raise HTTPException(status_code=401, detail="Invalid token")
+    except Exception as e:
+        logger.error(f"Error fetching data for user_id {user_id}: {e}")
+        raise HTTPException(status_code=500, detail="An error occurred while fetching user data")
