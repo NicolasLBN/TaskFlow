@@ -1,9 +1,12 @@
 import React, { useEffect, useState } from 'react';
 import Navbar from '../layouts/Navbar';
-import { getAllProjects, getUserData, assignUserToProject, removeUserFromProject, Project, User, Task } from '../services/api';
+import { getAllProjects, getUserData, assignUserToProject, removeUserFromProject } from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 import ProjectCard from '../components/Card/ProjectCard'; // Import the ProjectCard component
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
+import { User } from '../types/User';
+import { Project } from '../types/Project';
+import { Task } from '../types/Task';
 
 
 export interface DecodedToken {

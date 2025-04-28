@@ -9,10 +9,11 @@ router = APIRouter()
 # REST Methods for Tasks
 @router.post("/tasks/")
 async def create_task(task: Task):
+    print(task.dict())  # Affiche l'objet reçu pour débogage
     cursor.execute("""
-        INSERT INTO tasks (title, description, status, user_id, project_id)
-        VALUES (?, ?, ?, ?, ?)
-    """, (task.title, task.description, task.status, task.user_id, task.project_id))
+        INSERT INTO tasks (title, description, status, assigned_user_id, project_id, created_by, created_date, modified_date)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (task.title, task.description, task.status, task.assigned_user_id, task.project_id, task.created_by, task.created_date, task.modified_date))
     conn.commit()
     return {"message": "Task created successfully", "task": task}
 

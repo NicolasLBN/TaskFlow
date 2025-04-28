@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom'; // Import useNavigate
-import { loginUser, registerUser, User} from '../services/api'; // Import des services API
+import { loginUser, registerUser } from '../services/api'; // Import des services API
 import { useAuth } from '../context/AuthProvider';
+import { User } from '../types/User';
 
 const LoginSignUpPage: React.FC = () => {
   const [isLogin, setIsLogin] = useState(true); // Toggle entre login et sign-up
@@ -35,7 +36,7 @@ const LoginSignUpPage: React.FC = () => {
 
         setSuccess('Login successful');
         navigate('/home');
-        
+
       } else {
         const response = await registerUser({ username, password });
         console.log('API Response:', response);
@@ -48,8 +49,8 @@ const LoginSignUpPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center  bg-[rgb(32,36,36)] text-[#b6c2c4]">
-      <div className="bg-[#3E3C3F] p-8 rounded-x1 shadow-md w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-[rgb(32,36,36)] text-[#b6c2c4]">
+      <div className="bg-[#3E3C3F] p-8 rounded-2xl shadow-md w-full max-w-md">
         <h1 className="text-2xl font-bold text-[#b6c2c4] mb-6 text-center">
           {isLogin ? 'Login' : 'Sign Up'}
         </h1>

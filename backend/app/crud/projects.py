@@ -58,10 +58,12 @@ async def get_all_projects():
                     "title": task[2],
                     "description": task[3],
                     "status": task[4],
+                    "assigned_user_id": task[5],  # Assigned user ID
                     "assignedUser": {"id": task[5], "username": task[9]} if task[5] else None,
+                    "created_by": task[6],  # Created by user ID
                     "createdBy": {"id": task[6], "username": task[10]},
-                    "createdDate": task[7],
-                    "modifiedDate": task[8],
+                    "created_date": task[7],
+                    "modified_date": task[8],
                 }
                 for task in cursor.fetchall()
             ]
@@ -74,7 +76,6 @@ async def get_all_projects():
                 "users": users,
                 "tasks": tasks,
             })
-
         return {"projects": project_list}
     except Exception as e:
         logger.error(f"Error fetching projects: {e}")

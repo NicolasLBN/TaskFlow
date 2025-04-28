@@ -1,5 +1,5 @@
 import React from 'react';
-import { Task } from '../../services/api';
+import { Task } from '../../types/Task';
 
 interface ColumnProps {
   title: string;

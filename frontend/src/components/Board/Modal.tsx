@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
-import { Task, updateTask } from '../../services/api'; // Import the updateTask API function
+import { updateTask } from '../../services/api'; // Import the updateTask API function
+import { Task } from '../../types/Task';
 
 interface ModalProps {
   isOpen: boolean;

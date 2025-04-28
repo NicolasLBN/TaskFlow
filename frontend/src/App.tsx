@@ -4,7 +4,6 @@ import Navbar from './layouts/Navbar';
 import HomePage from './pages/HomePage';
 import LoginSignUpPage from './pages/LoginSignUpPage';
 import Kanban from './pages/Kanban';
-import { Task } from './services/api'; // Adjust the import path as necessary
 
 const App: React.FC = () => {
   const isAuthenticated = false; // Replace with actual authentication logic

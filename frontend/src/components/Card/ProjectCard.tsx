@@ -1,5 +1,6 @@
 import React from 'react';
-import { Project, User } from '../../services/api';
+import { Project } from '../../types/Project';
+import { User } from '../../types/User';
 
 interface ProjectCardProps {
   project: Project;

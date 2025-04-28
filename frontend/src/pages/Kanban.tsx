@@ -1,10 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { createTask, getAllTasksByProjectId, Task, updateTask, User } from '../services/api';
-import Navbar from '../layouts/Navbar';
+import { createTask, getAllTasksByProjectId, updateTask } from '../services/api';
 import {jwtDecode} from 'jwt-decode';
 import Column from '../components/Board/Column';
 import Modal from '../components/Board/Modal';
 import { DecodedToken } from './HomePage';
+import { User } from '../types/User';
+import { Task, toTaskDto } from '../types/Task';
 
 const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
   const [currentUser, setcurrentUser] = useState<User>({} as User);
@@ -93,29 +94,40 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
   const handleSaveTask = async (task: Task) => {
     try {
       if (task.id === 0) {
-        // Nouvelle tâche : appeler createTask
-        const newTask = await createTask(task);
-        setColumns((prevColumns) => ({
-          ...prevColumns,
-          [newTask.status as keyof typeof prevColumns]: [
-            ...prevColumns[newTask.status as keyof typeof prevColumns],
-            newTask,
-          ],
-        }));
+        // Convert Task to TaskDto
+        const taskDto = toTaskDto(task);
+        console.log('Task DTO:', taskDto); // Debug the taskDto object
+        const newTask = await createTask(taskDto);
+  
+        // Add the new task to the appropriate column
+        setColumns((prevColumns) => {
+          const status = (newTask.status || "todo") as keyof typeof prevColumns; // Default to "todo" if status is missing
+  
+          // Ensure the status exists in prevColumns
+          if (!prevColumns[status]) {
+            console.error(`Invalid status "${status}" for newTask.`);
+            return prevColumns;
+          }
+  
+          return {
+            ...prevColumns,
+            [status]: [...prevColumns[status], newTask], // Add the new task to the correct column
+          };
+        });
       } else {
-        // Tâche existante : appeler updateTask
+        // Update an existing task
         const updatedTask = await updateTask(task.id, task);
         setColumns((prevColumns) => {
           const fromColumn = Object.keys(prevColumns).find((key) =>
             prevColumns[key as keyof typeof prevColumns].some((t) => t.id === updatedTask.id)
           );
-
+  
           if (!fromColumn) return prevColumns;
-
+  
           const updatedFromColumn = prevColumns[fromColumn as keyof typeof prevColumns].map((t) =>
             t.id === updatedTask.id ? updatedTask : t
           );
-
+  
           return {
             ...prevColumns,
             [fromColumn]: updatedFromColumn,
@@ -171,8 +183,8 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
                 status: 'todo', // Par défaut, la tâche est dans la colonne "To Do"
                 assignedUser: { id: 0, username: '', password: '' }, // Utilisateur par défaut
                 createdBy: { id: currentUser.id, username: currentUser.username, password: '' }, // Utilisateur actuel
-                createdDate: new Date().toISOString(),
-                modifiedDate: new Date().toISOString(),
+                createdDate: "",
+                modifiedDate:"",
               });
               setIsModalOpen(true);
             }}

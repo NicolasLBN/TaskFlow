@@ -1,34 +1,10 @@
 import axios from "axios";
+import { User } from "../types/User";
+import { Project } from "../types/Project";
+import { TaskDto, Task } from "../types/Task";
 
 // Base URL de ton backend
 const API_URL = "http://localhost:8000"; // Change si nécessaire
-
-// Types
-export interface User {
-  id?: number; // Optional for registration
-  username: string;
-  password: string;
-}
-
-export interface Project {
-  id: number;
-  name: string;
-  description: string;
-  users?: User[]; // Optional for registration
-  tasks?: Task[]; // Optional for registration
-}
-
-export interface Task {
-  id: number;
-  project_id: number;
-  title: string;
-  description: string;
-  status?: string;
-  assignedUser: User;
-  createdBy: User;
-  createdDate: string;
-  modifiedDate: string;
-}
 
 // API Calls
 
@@ -74,7 +50,8 @@ export const removeUserFromProject = async (projectId: number, userId: number) =
 };
 
 // Tasks
-export const createTask = async (task: Task) => {
+export const createTask = async (task: TaskDto) => {
+  console.log("Creating task:", task)
   const response = await axios.post(`${API_URL}/tasks/`, task);
   return response.data;
 };
