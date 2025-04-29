@@ -5,7 +5,7 @@ from app.websocket_manager import manager, websocket_endpoint
 from app.database import create_tables
 from app.utils.logger import logger
 from fastapi import WebSocket
-from app.crud import users, projects, tasks
+from app.crud import users, projects, tasks, user_projects
 from app.auth import jwt_handler, security
 
 app = FastAPI()
@@ -38,3 +38,4 @@ logger.info("Application started.")
 app.include_router(users.router)
 app.include_router(projects.router)
 app.include_router(tasks.router)
+app.include_router(user_projects.router)

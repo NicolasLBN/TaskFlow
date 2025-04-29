@@ -33,7 +33,7 @@ export const createProject = async (project: Project) => {
 
 
 export const getAllProjects = async () => {
-  const response = await axios.get(`${API_URL}/projects/`);
+  const response = await axios.get(`${API_URL}/projects-with-details/`);
   return response.data;
 };
 

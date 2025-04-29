@@ -18,8 +18,8 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, members, onJoin, onL
       
       <h4 className="mt-4 text-lg font-medium text-[#b6c2c4]">Team Members:</h4>
       <ul className="list-disc pl-5 text-sm text-[#b6c2c4]">
-        {members.map((member) => (
-          <li key={member.id}>{member.username}</li>
+        {members.map((member, index) => (
+          <li key={`${member.id}-${index}`}>{member.username}</li>
         ))}
       </ul>
 

@@ -1,17 +1,19 @@
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate, useParams } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route, Navigate, useParams, useLocation } from 'react-router-dom';
 import Navbar from './layouts/Navbar';
 import HomePage from './pages/HomePage';
 import LoginSignUpPage from './pages/LoginSignUpPage';
 import Kanban from './pages/Kanban';
+import { Project } from './types/Project';
 
 const App: React.FC = () => {
   const isAuthenticated = false; // Replace with actual authentication logic
 
-  // Wrapper component to pass projectId as a prop to Kanban
+  // Wrapper component to pass the project object to Kanban
   const KanbanWrapper: React.FC = () => {
-    const { projectId } = useParams<{ projectId: string }>(); // Extract projectId from URL
-    return <Kanban projectId={Number(projectId)} />; // Pass projectId as a prop
+    const location = useLocation();
+    const project = location.state?.project as Project; // Retrieve the project object from state
+    return <Kanban project={project} />; // Pass the project object as a prop
   };
 
   return (

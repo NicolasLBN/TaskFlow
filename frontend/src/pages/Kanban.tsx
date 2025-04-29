@@ -3,9 +3,13 @@ import { createTask, getAllTasksByProjectId, updateTask } from '../services/api'
 import {jwtDecode} from 'jwt-decode';
 import Column from '../components/Board/Column';
 import Modal from '../components/Board/Modal';
-import { DecodedToken } from './HomePage';
 import { User } from '../types/User';
 import { Task, toTaskDto } from '../types/Task';
+
+interface DecodedToken {
+  sub: string;
+  username: string;
+}
 
 const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
   const [currentUser, setcurrentUser] = useState<User>({} as User);
