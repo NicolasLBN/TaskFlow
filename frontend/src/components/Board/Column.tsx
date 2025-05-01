@@ -19,7 +19,7 @@ const Column: React.FC<ColumnProps> = ({ title, tasks, onDragStart, onDrop, onDr
     >
       <h2 className="text-center mb-4 text-xl font-semibold">{title}</h2>
       {tasks.length > 0 ? (
-        tasks.map((task) => (
+        tasks.map((task, index) => (
           <div
             key={task.id}
             draggable

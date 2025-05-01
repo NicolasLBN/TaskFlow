@@ -20,16 +20,17 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
   });
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const tokenValue = localStorage.getItem('authToken') || '';
+  const decoded: DecodedToken = jwtDecode(tokenValue);
+  const currentSessionUser: User = {
+    id: Number(decoded.sub),
+    username: decoded.username,
+    password: '', // Le mot de passe n'est pas nécessaire ici
+  } as User;
 
   useEffect(() => {
     const fetchTasks = async () => {
-      const tokenValue = localStorage.getItem('authToken') || '';
-      const decoded: DecodedToken = jwtDecode(tokenValue);
-      const currentSessionUser: User = {
-        id: Number(decoded.sub),
-        username: decoded.username,
-        password: '', // Le mot de passe n'est pas nécessaire ici
-      } as User;
+
       setcurrentUser(currentSessionUser);
 
       try {
@@ -45,6 +46,10 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
     };
 
     fetchTasks();
+        // Set up periodic fetch
+    const interval = setInterval(fetchTasks, 30000); // Fetch every 30 seconds
+
+    return () => clearInterval(interval); // Cleanup on component unmount
   }, [projectId]);
 
   const handleDragStart = (event: React.DragEvent, task: Task, column: 'todo' | 'inProgress' | 'done') => {
@@ -98,29 +103,16 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
   const handleSaveTask = async (task: Task) => {
     try {
       if (task.id === 0) {
-        // Convert Task to TaskDto
         const taskDto = toTaskDto(task);
-        console.log('Task DTO:', taskDto); // Debug the taskDto object
         const newTask = await createTask(taskDto);
   
-        // Add the new task to the appropriate column
-        setColumns((prevColumns) => {
-          const status = (newTask.status || "todo") as keyof typeof prevColumns; // Default to "todo" if status is missing
-  
-          // Ensure the status exists in prevColumns
-          if (!prevColumns[status]) {
-            console.error(`Invalid status "${status}" for newTask.`);
-            return prevColumns;
-          }
-  
-          return {
-            ...prevColumns,
-            [status]: [...prevColumns[status], newTask], // Add the new task to the correct column
-          };
-        });
+        // Ajouter la tâche localement
+        setColumns({...columns, [task.status as keyof typeof columns]: [...columns[task.status as keyof typeof columns], task] })
+        
       } else {
-        // Update an existing task
         const updatedTask = await updateTask(task.id, task);
+  
+        // Mettre à jour la tâche localement
         setColumns((prevColumns) => {
           const fromColumn = Object.keys(prevColumns).find((key) =>
             prevColumns[key as keyof typeof prevColumns].some((t) => t.id === updatedTask.id)
@@ -181,7 +173,7 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
             onClick={() => {
               setSelectedTask({
                 id: 0, // ID temporaire, sera remplacé par l'ID généré par le backend
-                project_id: projectId,
+                projectId: projectId,
                 title: '',
                 description: '',
                 status: 'todo', // Par défaut, la tâche est dans la colonne "To Do"

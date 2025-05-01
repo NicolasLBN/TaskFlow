@@ -15,7 +15,6 @@ export const registerUser = async (user: User) => {
 };
 
 export const loginUser = async (user: User) => {
-  console.log("Login user:", user); // Debug the user object
   const response = await axios.post(`${API_URL}/login/`, user);
   return response.data;
 };
@@ -38,20 +37,17 @@ export const getAllProjects = async () => {
 };
 
 export const assignUserToProject = async (projectId: number, userId: number) => {
-  console.log("Assigning user to project:", { projectId, userId }); // Debug the IDs
   const response = await axios.post(`${API_URL}/projects/${projectId}/users/${userId}`);
   return response.data;
 };
 
 export const removeUserFromProject = async (projectId: number, userId: number) => {
-  console.log("Assigning user to project:", { projectId, userId }); // Debug the IDs
   const response = await axios.delete(`${API_URL}/projects/${projectId}/users/${userId}`);
   return response.data;
 };
 
 // Tasks
 export const createTask = async (task: TaskDto) => {
-  console.log("Creating task:", task)
   const response = await axios.post(`${API_URL}/tasks/`, task);
   return response.data;
 };
@@ -62,7 +58,6 @@ export const updateTask = async (taskId: number, updatedTask: Partial<Task>): Pr
 };
 
 export const updateTaskStatus = async (taskId: number, status: string) => {
-  console.log("Updating task status:", { taskId, status }); // Debug the IDs
   const response = await axios.put(`${API_URL}/tasks/${taskId}`, { status, modifiedDate: new Date().toISOString() });
   return response.data;
 };
@@ -77,7 +72,6 @@ export const getAllTasksByProjectId = async (projectId: number) => {
 };
 
 export const getUserData = async (userId: number) => {
-  console.log("User ID:", userId); // Debug the user ID value
 
   if (!userId) {
     throw new Error("No user ID provided");

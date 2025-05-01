@@ -25,12 +25,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave }) => {
     if (editableTask) {
       try {
         setIsSaving(true); // Set saving state
-        const updatedTask = await updateTask(editableTask.id, {
-          title: editableTask.title,
-          description: editableTask.description,
-          status: editableTask.status,
-        }); // Call the API to update the task
-        onSave(updatedTask); // Update the task in the parent state
+        onSave(editableTask); // Update the task in the parent state
         setIsEditMode(false); // Exit edit mode
         onClose(); // Close the modal
       } catch (error) {

@@ -5,7 +5,6 @@ import { useNavigate } from 'react-router-dom';
 import ProjectCard from '../components/Card/ProjectCard';
 import { Project } from '../types/Project';
 import { User } from '../types/User';
-import { Task } from '../types/Task';
 import {jwtDecode} from 'jwt-decode';
 
 // Define DecodedToken interface for jwtDecode
@@ -45,9 +44,7 @@ const Projects: React.FC = () => {
         const otherProjects: Project[] = [];
   
         projects.forEach((project: Project) => {
-          console.log('Project:', project); // Debug the project object
           const isMember = (project.users ?? []).some((user: User) => user.id === currentSessionUser.id);
-          console.log('Is member:', isMember); // Debug the membership status
           if (isMember) {
             userProjects.push(project);
           } else {

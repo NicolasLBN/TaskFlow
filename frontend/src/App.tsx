@@ -13,7 +13,7 @@ const App: React.FC = () => {
   const KanbanWrapper: React.FC = () => {
     const location = useLocation();
     const project = location.state?.project as Project; // Retrieve the project object from state
-    return <Kanban project={project} />; // Pass the project object as a prop
+    return <Kanban projectId={project.id} />; // Pass the project id as a prop
   };
 
   return (
