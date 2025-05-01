@@ -62,6 +62,11 @@ export const updateTaskStatus = async (taskId: number, status: string) => {
   return response.data;
 };
 
+export const deleteTask = async (taskId: number): Promise<void> => {
+  const response = await axios.delete(`${API_URL}/tasks/${taskId}`);
+  return response.data;
+};
+
 export const getAllTasksByProjectId = async (projectId: number) => {
   console.log(`Fetching all tasks for project ID: ${projectId}`);
   const response = await axios.get(`${API_URL}/tasks`, {

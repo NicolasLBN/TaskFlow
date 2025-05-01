@@ -1,17 +1,18 @@
 import React, { useState, useEffect } from 'react';
-import { createTask, getAllTasksByProjectId, updateTask } from '../services/api';
+import { createTask, getAllTasksByProjectId, updateTask, deleteTask } from '../services/api';
 import {jwtDecode} from 'jwt-decode';
 import Column from '../components/Board/Column';
 import Modal from '../components/Board/Modal';
 import { User } from '../types/User';
 import { Task, toTaskDto } from '../types/Task';
+import { Project } from '../types/Project';
 
 interface DecodedToken {
   sub: string;
   username: string;
 }
 
-const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
+const Kanban: React.FC<{ project: Project }> = ({ project }) => {
   const [currentUser, setcurrentUser] = useState<User>({} as User);
   const [columns, setColumns] = useState({
     todo: [] as Task[],
@@ -20,6 +21,7 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
   });
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
   const tokenValue = localStorage.getItem('authToken') || '';
   const decoded: DecodedToken = jwtDecode(tokenValue);
   const currentSessionUser: User = {
@@ -34,7 +36,7 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
       setcurrentUser(currentSessionUser);
 
       try {
-        const tasks = await getAllTasksByProjectId(projectId);
+        const tasks = await getAllTasksByProjectId(project.id);
         setColumns({
           todo: tasks.filter((task: Task) => task.status === 'todo'),
           inProgress: tasks.filter((task: Task) => task.status === 'inProgress'),
@@ -50,7 +52,7 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
     const interval = setInterval(fetchTasks, 30000); // Fetch every 30 seconds
 
     return () => clearInterval(interval); // Cleanup on component unmount
-  }, [projectId]);
+  }, [project.id]);
 
   const handleDragStart = (event: React.DragEvent, task: Task, column: 'todo' | 'inProgress' | 'done') => {
     event.dataTransfer.setData('task', JSON.stringify(task));
@@ -93,6 +95,7 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
     setIsModalOpen(true);
+    setIsEditMode(true); // Set edit mode
   };
 
   const closeModal = () => {
@@ -138,6 +141,28 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
     }
   };
 
+  const handleDeleteTask = async (taskId: number) => {
+    try {
+      await deleteTask(taskId);
+      setColumns((prevColumns) => {
+        const updatedColumns = { ...prevColumns };
+        Object.keys(updatedColumns).forEach((key) => {
+          updatedColumns[key as keyof typeof prevColumns] = updatedColumns[key as keyof typeof prevColumns].filter(
+            (task) => task.id !== taskId
+          );
+        });
+        return updatedColumns;
+      });
+    } catch (error) {
+      console.error('Error deleting task:', error);
+      alert('Failed to delete the task. Please try again.');
+    } finally {
+      closeModal();
+    }
+  };
+
+
+
   return (
     <div className="min-h-screen bg-[#3E3C3F]">
       <div className="container mx-auto py-8">
@@ -173,7 +198,7 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
             onClick={() => {
               setSelectedTask({
                 id: 0, // ID temporaire, sera remplacé par l'ID généré par le backend
-                projectId: projectId,
+                projectId: project.id,
                 title: '',
                 description: '',
                 status: 'todo', // Par défaut, la tâche est dans la colonne "To Do"
@@ -183,6 +208,8 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
                 modifiedDate:"",
               });
               setIsModalOpen(true);
+              setIsEditMode(false); // Set create mode
+
             }}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
           >
@@ -195,6 +222,8 @@ const Kanban: React.FC<{ projectId: number }> = ({ projectId }) => {
         onClose={closeModal}
         task={selectedTask}
         onSave={handleSaveTask} // Pass handleSaveTask to the modal
+        onDelete={handleDeleteTask} // Pass handleDeleteTask to the modal
+        users={project.users ?? []} // Pass the project
       />
     </div>
   );

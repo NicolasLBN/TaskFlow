@@ -47,7 +47,24 @@ async def update_task(task_id: int, task_data: dict):
         logger.error(f"Error updating task {task_id}: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while updating the task")
 
+@router.delete("/tasks/{task_id}")
+async def delete_task(task_id: int):
+    try:
+        # Check if the task exists
+        cursor.execute("SELECT id FROM tasks WHERE id = ?", (task_id,))
+        task = cursor.fetchone()
+        if not task:
+            raise HTTPException(status_code=404, detail="Task not found")
 
+        # Delete the task
+        cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
+        conn.commit()
+
+        return {"message": f"Task with ID {task_id} deleted successfully"}
+    except Exception as e:
+        logger.error(f"Error deleting task {task_id}: {e}")
+        raise HTTPException(status_code=500, detail="An error occurred while deleting the task")
+        
 @router.get("/tasks")
 async def get_all_tasks_by_project(project_id: int):
     try:

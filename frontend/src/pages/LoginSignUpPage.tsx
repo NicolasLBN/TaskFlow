@@ -28,7 +28,6 @@ const LoginSignUpPage: React.FC = () => {
       if (isLogin) {
         const user: User = { username, password };
         const response = await loginUser(user);
-        console.log('API Response:', response);
 
         // Save the token in context and localStorage
         setToken(response.token);
