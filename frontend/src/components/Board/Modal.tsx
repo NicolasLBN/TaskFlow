@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { Task } from '../../types/Task';
 import { User } from '../../types/User';
 import edit from '../../assets/icons/edit.png'; // Edit icon SVG
-import closeIcon from '../../assets/icons/remove.png'; // Close icon SVG
 import save from '../../assets/icons/save.png'; // Save icon SVG
 
 interface ModalProps {
@@ -18,7 +17,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
   const [isEditMode, setIsEditMode] = useState(false); // State to toggle edit mode
   const [editableTask, setEditableTask] = useState<Task | null>(task); // State for editable task
   const [isSaving, setIsSaving] = useState(false); // State to track saving status
-  const [isDeleting, setIsDeleting] = useState(false); // State to track deleting status
 
   // Update editable task and set edit mode when the modal opens with a new task
   React.useEffect(() => {
@@ -60,7 +58,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
       <div className="bg-gray-700 text-white rounded-2xl shadow-xl w-[48rem] max-w-full p-8 relative">
         {/* Top Icons */}
-        <div className="absolute top-4 left-4 flex items-center space-x-4 w-8 h-8 invert" >
+        {!isEditMode && <div className="absolute top-4 left-4 flex items-center space-x-4 w-8 h-8 invert" >
           <button
             onClick={() => setIsEditMode(true)}
             className="hover:text-blue-400 transition"
@@ -68,14 +66,14 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
           >
             <img src={edit} alt="Edit" className="w-8 h-8" />
           </button>
-        </div>
-        <div className="absolute top-4 right-4">
+        </div>}
+        <div className="absolute top-4 right-4 flex items-center space-x-4 w-8 h-8">
           <button
             onClick={onClose}
-            className="hover:text-gray-400 transition"
+            className="hover:text-gray-400 transition text-white text-5xl font-bold"
             title="Close Modal"
           >
-            <img src={closeIcon} alt="Close" className="w-8 h-8" />
+            &times; {/* This represents the "X" symbol */}
           </button>
         </div>
 
@@ -90,13 +88,13 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
                   type="text"
                   value={editableTask.title}
                   onChange={(e) => setEditableTask({ ...editableTask, title: e.target.value })}
-                  className="block py-3 px-0 w-full text-base text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
+                  className="block py-3 px-0 w-full text-lg text-gray-700 dark:text-gray-300 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:border-gray-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
                   placeholder=" "
                   required
                 />
                 <label
                   htmlFor="title"
-                  className="peer-focus:font-medium absolute text-base text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                  className="peer-focus:font-medium absolute text-lg text-gray-900 dark:text-white duration-300 transform -translate-y-6 top-3 -z-10 origin-[0] peer-focus:text-blue-500 peer-placeholder-shown:peer-placeholder-shown:translate-y-0 peer-focus:scale-100 peer-focus:-translate-y-6"
                 >
                   Title
                 </label>
@@ -107,13 +105,13 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
                 <textarea
                   value={editableTask.description}
                   onChange={(e) => setEditableTask({ ...editableTask, description: e.target.value })}
-                  className="block py-3 px-0 w-full text-base text-gray-900 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
+                  className="block py-3 px-0 w-full text-lg text-gray-700 dark:text-gray-300 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:border-gray-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
                   placeholder=" "
                   required
                 />
                 <label
                   htmlFor="description"
-                  className="peer-focus:font-medium absolute text-base text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                  className="peer-focus:font-medium absolute text-lg text-gray-900 dark:text-white duration-300 transform -translate-y-6 top-3 -z-10 origin-[0] peer-focus:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:peer-focus:-translate-y-6"
                 >
                   Description
                 </label>
@@ -124,16 +122,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
                 <select
                   value={editableTask.status}
                   onChange={(e) => setEditableTask({ ...editableTask, status: e.target.value })}
-                  className="block py-3 px-0 w-full text-base bg-transparent text-gray-900 border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
+                  className="block py-3 px-0 w-full text-lg text-gray-700 dark:text-gray-300 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:border-gray-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
                   required
                 >
-                  <option value="todo">To Do</option>
-                  <option value="inProgress">In Progress</option>
-                  <option value="done">Done</option>
+                  <option className="bg-gray-700 text-white" value="todo">To Do</option>
+                  <option className="bg-gray-700 text-white" value="inProgress">In Progress</option>
+                  <option className="bg-gray-700 text-white" value="done">Done</option>
                 </select>
                 <label
                   htmlFor="status"
-                  className="peer-focus:font-medium absolute text-base text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                  className="peer-focus:font-medium absolute text-lg text-gray-900 dark:text-white duration-300 transform -translate-y-6 top-3 -z-10 origin-[0] peer-focus:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus: peer-focus:-translate-y-6"
                 >
                   Status
                 </label>
@@ -144,21 +142,18 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
                 <select
                   value={editableTask.assignedUser?.id || ''}
                   onChange={handleUserChange}
-                  className="block py-3 px-0 w-full text-base bg-transparent text-gray-900 border-0 border-b-2 border-gray-300 appearance-none dark:text-white dark:border-gray-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
+                  className="block py-3 px-0 w-full text-lg text-gray-700 dark:text-gray-300 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:border-gray-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
                   required
                 >
-                  <option value="" disabled>
-                    Select a user
-                  </option>
                   {users.map((user) => (
-                    <option key={user.id} value={user.id}>
+                    <option className="bg-gray-700 text-white" key={user.id} value={user.id}>
                       {user.username}
                     </option>
                   ))}
                 </select>
                 <label
                   htmlFor="assignedUser"
-                  className="peer-focus:font-medium absolute text-base text-gray-400 duration-300 transform -translate-y-6 scale-75 top-3 -z-10 origin-[0] peer-focus:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus:scale-75 peer-focus:-translate-y-6"
+                  className="peer-focus:font-medium absolute text-lg text-gray-900 dark:text-white duration-300 transform -translate-y-6 top-3 -z-10 origin-[0] peer-focus:text-blue-500 peer-placeholder-shown:scale-100 peer-placeholder-shown:translate-y-0 peer-focus: peer-focus:-translate-y-6"
                 >
                   Assigned User
                 </label>
@@ -168,31 +163,31 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
             <div className="w-full bg-white border border-gray-200 rounded-lg shadow-sm p-6 dark:bg-gray-700 dark:border-gray-700">
               <ul role="list" className="divide-y divide-gray-200 dark:divide-gray-200 space-y-4">
                 <li>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white">Title</p>
+                  <p className="text-lg font-medium text-gray-900 dark:text-white">Title</p>
                   <p className="text-base text-gray-700 dark:text-gray-300">{editableTask.title}</p>
                 </li>
                 <li>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white mt-4">Description</p>
+                  <p className="text-lg font-medium text-gray-900 dark:text-white mt-4">Description</p>
                   <p className="text-base text-gray-700 dark:text-gray-300">{editableTask.description}</p>
                 </li>
                 <li>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white mt-4">Status</p>
+                  <p className="text-lg font-medium text-gray-900 dark:text-white mt-4">Status</p>
                   <p className="text-base text-gray-700 dark:text-gray-300">{editableTask.status}</p>
                 </li>
                 <li>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white mt-4">Assigned User</p>
+                  <p className="text-lg font-medium text-gray-900 dark:text-white mt-4">Assigned User</p>
                   <p className="text-base text-gray-700 dark:text-gray-300">{editableTask.assignedUser?.username || 'Unassigned'}</p>
                 </li>
                 <li>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white mt-4">Created By</p>
+                  <p className="text-lg font-medium text-gray-900 dark:text-white mt-4">Created By</p>
                   <p className="text-base text-gray-700 dark:text-gray-300">{editableTask.createdBy.username}</p>
                 </li>
                 <li>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white mt-4">Created Date</p>
+                  <p className="text-lg font-medium text-gray-900 dark:text-white mt-4">Created Date</p>
                   <p className="text-base text-gray-700 dark:text-gray-300">{new Date(editableTask.createdDate).toLocaleString()}</p>
                 </li>
                 <li>
-                  <p className="text-lg font-semibold text-gray-900 dark:text-white mt-4">Modified Date</p>
+                  <p className="text-lg font-medium text-gray-900 dark:text-white mt-4">Modified Date</p>
                   <p className="text-base text-gray-700 dark:text-gray-300">{new Date(editableTask.modifiedDate).toLocaleString()}</p>
                 </li>
               </ul>
@@ -214,6 +209,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
               <button
                 onClick={handleSave}
                 disabled={isSaving}
+                className='hover:bg-gray-600 text-white px-6 py-2 rounded-lg text-base transition flex items-center'
               >
                 <img src={save} alt="Close" className="w-8 h-8 invert" />
               </button>
