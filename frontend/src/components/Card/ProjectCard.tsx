@@ -10,7 +10,7 @@ interface ProjectCardProps {
   onGoToBoard?: () => void; // Callback for the "Go to Board" button
 }
 
-const ProjectCard: React.FC<ProjectCardProps> = ({ project, members, onJoin, onLeave, onGoToBoard }) => {
+const ProjectCard: React.FC<ProjectCardProps> = React.memo(({ project, members, onJoin, onLeave, onGoToBoard }) => {
   return (
     <div className="bg-[#28242c] border border-gray-300 rounded-lg p-6 mb-6">
       <h3 className="text-xl font-semibold text-[#b6c2c4]">{project.name}</h3>
@@ -50,6 +50,6 @@ const ProjectCard: React.FC<ProjectCardProps> = ({ project, members, onJoin, onL
       )}
     </div>
   );
-};
+});
 
 export default ProjectCard;

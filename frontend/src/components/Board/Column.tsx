@@ -7,10 +7,10 @@ interface ColumnProps {
   onDragStart: (event: React.DragEvent, task: Task) => void;
   onDrop: (event: React.DragEvent) => void;
   onDragOver: (event: React.DragEvent) => void;
-  onTaskClick: (task: Task) => void; // New prop for handling task clicks
+  onTaskClick: (task: Task) => void;
 }
 
-const Column: React.FC<ColumnProps> = ({ title, tasks, onDragStart, onDrop, onDragOver, onTaskClick }) => {
+const Column: React.FC<ColumnProps> = React.memo(({ title, tasks, onDragStart, onDrop, onDragOver, onTaskClick }) => {
   return (
     <div
       onDrop={onDrop}
@@ -24,7 +24,7 @@ const Column: React.FC<ColumnProps> = ({ title, tasks, onDragStart, onDrop, onDr
             key={task.id}
             draggable
             onDragStart={(event) => onDragStart(event, task)}
-            onClick={() => onTaskClick(task)} // Trigger the onTaskClick handler when a task is clicked
+            onClick={() => onTaskClick(task)}
             className="p-2 mb-2 border border-gray-300 rounded-md bg-[#3E3C3F] cursor-pointer"
           >
             <h4 className="text-lg font-medium">{task.title}</h4>
@@ -36,6 +36,6 @@ const Column: React.FC<ColumnProps> = ({ title, tasks, onDragStart, onDrop, onDr
       )}
     </div>
   );
-};
+});
 
 export default Column;

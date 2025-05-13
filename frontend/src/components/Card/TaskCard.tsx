@@ -9,7 +9,7 @@ interface TaskCardProps {
   modifiedDate: string;
 }
 
-const TaskCard: React.FC<TaskCardProps> = ({
+const TaskCard: React.FC<TaskCardProps> = React.memo(({
   id,
   title,
   description,
@@ -32,6 +32,6 @@ const TaskCard: React.FC<TaskCardProps> = ({
       </p>
     </div>
   );
-};
+});
 
 export default TaskCard;
