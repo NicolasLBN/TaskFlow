@@ -5,7 +5,9 @@ import { useNavigate } from 'react-router-dom';
 import ProjectCard from '../components/Card/ProjectCard';
 import { Project } from '../types/Project';
 import { User } from '../types/User';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
+import { Task, toTask } from '../types/Task';
+import TaskList from '../components/List/TaskList';
 
 // Define DecodedToken interface for jwtDecode
 interface DecodedToken {
@@ -15,6 +17,7 @@ interface DecodedToken {
 
 const Projects: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [userTasks, setUserTasks] = useState<Task[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [otherProjects, setOtherProjects] = useState<Project[]>([]);
@@ -22,6 +25,7 @@ const Projects: React.FC = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+
     const fetchData = async () => {
       try {
         // Decode the token to get the current user's information
@@ -33,16 +37,16 @@ const Projects: React.FC = () => {
           password: ''
         };
         setCurrentUser(currentSessionUser);
-  
+
         // Fetch all projects
         const projectsResponse = await getAllProjects();
         const projects = projectsResponse.projects || [];
         setProjects(projects);
-  
+
         // Separate projects into userProjects and otherProjects
         const userProjects: Project[] = [];
         const otherProjects: Project[] = [];
-  
+
         projects.forEach((project: Project) => {
           const isMember = (project.users ?? []).some((user: User) => user.id === currentSessionUser.id);
           if (isMember) {
@@ -51,16 +55,26 @@ const Projects: React.FC = () => {
             otherProjects.push(project);
           }
         });
-  
+
         setUserProjects(userProjects);
         setOtherProjects(otherProjects);
+        console.log('User Projects:', userProjects);
+
+        const assignedTasks = userProjects
+        .flatMap((project) => project.tasks || []) // Get all tasks from userProjects
+        .filter((task: any) => task.assigned_user_id?.id === currentSessionUser.id); // Filter tasks assigned to the current user
+
+        console.log('Assigned Tasks:', assignedTasks);
+
+        setUserTasks(assignedTasks); // Update the userTasks state with assigned tasks
+
       } catch (error) {
         console.error('Error fetching projects:', error);
       } finally {
         setLoading(false);
       }
     };
-  
+
     fetchData();
   }, []);
 
@@ -122,7 +136,7 @@ const Projects: React.FC = () => {
               <ProjectCard
                 key={project.id}
                 project={project}
-                members={(project.tasks ?? []).flatMap((task) => task.users || [])}
+                members={project.users ?? []}
                 onLeave={() => handleLeaveProject(project.id)}
                 onGoToBoard={() => handleGoToBoard(project)}
               />
@@ -143,13 +157,22 @@ const Projects: React.FC = () => {
               <ProjectCard
                 key={project.id}
                 project={project}
-                members={(project.tasks ?? []).flatMap((task) => task.users || [])}
+                members={(project.users ?? [])}
                 onJoin={() => handleJoinProject(project.id)}
               />
             ))
           ) : (
             <p>No other projects available.</p>
           )}
+        </div>
+      </div>
+
+      {/* Task Section */}
+      <div className="mx-auto max-w-6xl px-10 mt-12">
+        <h2 className="text-3xl font-semibold text-left mb-4">Your userTasks</h2>
+        <hr className="mb-8 border-t-2 border-gray-300" />
+        <div className="flex flex-col gap-6">
+          <TaskList tasks={userTasks} />
         </div>
       </div>
     </div>

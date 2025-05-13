@@ -10,7 +10,6 @@ export interface Task {
     createdBy: User;
     createdDate: string;
     modifiedDate: string;
-    users?: User[]; // Liste des utilisateurs assignés à la tâche
   }
   
   export interface TaskDto {
@@ -61,6 +60,5 @@ export interface Task {
       createdBy: createdBy,
       createdDate: taskDto.created_date || new Date().toISOString(),
       modifiedDate: taskDto.modified_date || new Date().toISOString(),
-      users: users, // Optional: Include all users if needed
     };
   };
