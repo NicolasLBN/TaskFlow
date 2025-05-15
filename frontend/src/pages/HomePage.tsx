@@ -62,7 +62,7 @@ const Projects: React.FC = () => {
 
         const assignedTasks = userProjects
         .flatMap((project) => project.tasks || []) // Get all tasks from userProjects
-        .filter((task: any) => task.assigned_user_id?.id === currentSessionUser.id); // Filter tasks assigned to the current user
+        .filter((task: any) => task.assigned_user_id.id === currentSessionUser.id); // Filter tasks assigned to the current user
 
         console.log('Assigned Tasks:', assignedTasks);
 
@@ -169,9 +169,9 @@ const Projects: React.FC = () => {
 
       {/* Task Section */}
       <div className="mx-auto max-w-6xl px-10 mt-12">
-        <h2 className="text-3xl font-semibold text-left mb-4">Your userTasks</h2>
+        <h2 className="text-3xl font-semibold text-left mb-4">Your Tasks</h2>
         <hr className="mb-8 border-t-2 border-gray-300" />
-        <div className="flex flex-col gap-6">
+        <div className="grid grid-cols-1 gap-6 mb-8">
           <TaskList tasks={userTasks} />
         </div>
       </div>
