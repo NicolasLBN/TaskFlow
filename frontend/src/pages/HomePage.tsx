@@ -62,7 +62,9 @@ const Projects: React.FC = () => {
 
         const assignedTasks = userProjects
         .flatMap((project) => project.tasks || []) // Get all tasks from userProjects
-        .filter((task: any) => task.assigned_user_id.id === currentSessionUser.id); // Filter tasks assigned to the current user
+        .filter((task: any) => 
+                  task.assigned_user_id && 
+                  task.assigned_user_id.id === currentSessionUser.id); // Filter tasks assigned to the current user
 
         console.log('Assigned Tasks:', assignedTasks);
 
