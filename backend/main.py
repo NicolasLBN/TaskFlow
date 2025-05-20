@@ -26,11 +26,6 @@ app.websocket("/ws/kanban")(websocket_endpoint)
 
 # Create tables on startup
 create_tables()
-# Read and execute the SQL file
-'''with open("populate.sql", "r") as file:
-    sql_script = file.read()
-    cursor.executescript(sql_script)
-conn.commit()'''
 
 logger.info("Application started.")
 

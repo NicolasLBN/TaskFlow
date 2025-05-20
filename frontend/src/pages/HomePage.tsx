@@ -6,7 +6,7 @@ import ProjectCard from '../components/Card/ProjectCard';
 import { Project } from '../types/Project';
 import { User } from '../types/User';
 import { jwtDecode } from 'jwt-decode';
-import { Task, toTask } from '../types/Task';
+import { Task } from '../types/Task';
 import TaskList from '../components/List/TaskList';
 
 // Define DecodedToken interface for jwtDecode
