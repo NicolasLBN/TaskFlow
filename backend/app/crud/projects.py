@@ -86,7 +86,7 @@ async def get_all_projects():
 @router.get("/projects-with-details/")
 async def get_projects_with_details():
     try:
-        # Fetch all projects with their tasks and associated users
+        # Execute a SQL query to fetch project, user, and task details with joins
         cursor.execute("""
             SELECT 
                 p.id AS project_id, 
@@ -113,8 +113,41 @@ async def get_projects_with_details():
         """)
         rows = cursor.fetchall()
 
-        # Organize the data into a hierarchical structure
+        # Helper function to add a user to the project if not already present
+        def add_user(project, user_id, user_username):
+            if user_id:
+                user = {"id": user_id, "username": user_username}
+                if user not in project["users"]:
+                    project["users"].append(user)
+
+        # Helper function to add a task to the project if not already present
+        def add_task(project, row):
+            task_id = row["task_id"]
+            if not task_id:
+                return
+            existing_task_ids = {task["id"] for task in project["tasks"]}
+            if task_id in existing_task_ids:
+                return
+            task = {
+                "id": task_id,
+                "title": row["task_title"],
+                "description": row["task_description"],
+                "status": row["task_status"],
+                "assigned_user_id": {
+                    "id": row["task_assigned_user_id"],
+                    "username": row["assigned_user_username"]
+                } if row["task_assigned_user_id"] else None,
+                "created_by": {
+                    "id": row["task_created_by"],
+                    "username": row["task_created_by_username"]
+                },
+                "created_date": row["task_created_date"],
+                "modified_date": row["task_modified_date"]
+            }
+            project["tasks"].append(task)
+
         projects = {}
+        # Iterate over each row and build the project dictionary
         for row in rows:
             project_id = row["project_id"]
             if project_id not in projects:
@@ -125,42 +158,15 @@ async def get_projects_with_details():
                     "users": [],
                     "tasks": []
                 }
+            project = projects[project_id]
+            add_user(project, row["user_id"], row["user_username"])
+            add_task(project, row)
 
-            # Add users to the project (avoid duplicates)
-            user_id = row["user_id"]
-            if user_id:
-                user = {"id": user_id, "username": row["user_username"]}
-                if user not in projects[project_id]["users"]:
-                    projects[project_id]["users"].append(user)
-
-            # Add tasks to the project (avoid duplicates)
-            task_id = row["task_id"]
-            if task_id:
-                # Check if the task already exists in the tasks list
-                existing_task_ids = {task["id"] for task in projects[project_id]["tasks"]}
-                if task_id not in existing_task_ids:
-                    task = {
-                        "id": task_id,
-                        "title": row["task_title"],
-                        "description": row["task_description"],
-                        "status": row["task_status"],
-                        "assigned_user_id": {
-                            "id": row["task_assigned_user_id"],
-                            "username": row["assigned_user_username"]
-                        } if row["task_assigned_user_id"] else None,
-                        "created_by": {
-                            "id": row["task_created_by"],
-                            "username": row["task_created_by_username"]
-                        },
-                        "created_date": row["task_created_date"],
-                        "modified_date": row["task_modified_date"]
-                    }
-                    projects[project_id]["tasks"].append(task)
-
-        # Convert the dictionary to a list
         project_list = list(projects.values())
+        # Return the list of projects with their users and tasks
         return {"projects": project_list}
 
     except Exception as e:
+        # Log the error and raise an HTTP 500 error if something goes wrong
         logger.error(f"Error fetching projects with details: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while fetching projects with details")
