@@ -1,31 +1,38 @@
 from fastapi import APIRouter, HTTPException
 from app.database import cursor, conn
 from app.models import Task
-from datetime import datetime
+from datetime import datetime, timezone
 from app.utils.logger import logger
 
 router = APIRouter()
 
 # REST Methods for Tasks
+
 @router.post("/tasks/")
 async def create_task(task: Task):
-    print(task.dict())  # Affiche l'objet reçu pour débogage
+    # Print the received task object for debugging
+    print(task.dict())  # Debug: show received object
+    # Insert the new task into the database
     cursor.execute("""
         INSERT INTO tasks (title, description, status, assigned_user_id, project_id, created_by, created_date, modified_date)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     """, (task.title, task.description, task.status, task.assigned_user_id, task.project_id, task.created_by, task.created_date, task.modified_date))
     conn.commit()
+    # Return a success message and the created task
     return {"message": "Task created successfully", "task": task}
 
 
 @router.put("/tasks/{task_id}")
 async def update_task(task_id: int, task_data: dict):
     try:
+        # Extract updated fields from the request data
         title = task_data.get("title")
         description = task_data.get("description")
         status = task_data.get("status")
-        modified_date = datetime.utcnow().isoformat()
+        # Use timezone-aware UTC datetime for modification date
+        modified_date = datetime.now(timezone.utc).isoformat()
 
+        # Update the task in the database
         cursor.execute(
             """
             UPDATE tasks
@@ -36,6 +43,7 @@ async def update_task(task_id: int, task_data: dict):
         )
         conn.commit()
 
+        # Return the updated task information
         return {
             "id": task_id,
             "title": title,
@@ -56,10 +64,11 @@ async def delete_task(task_id: int):
         if not task:
             raise HTTPException(status_code=404, detail="Task not found")
 
-        # Delete the task
+        # Delete the task from the database
         cursor.execute("DELETE FROM tasks WHERE id = ?", (task_id,))
         conn.commit()
 
+        # Return a success message
         return {"message": f"Task with ID {task_id} deleted successfully"}
     except Exception as e:
         logger.error(f"Error deleting task {task_id}: {e}")
@@ -69,6 +78,7 @@ async def delete_task(task_id: int):
 async def get_all_tasks_by_project(project_id: int):
     try:
         print(f"Fetching all tasks for project_id: {project_id}")
+        # Query all tasks for the given project, joining user info
         cursor.execute("""
             SELECT 
                 t.id,
