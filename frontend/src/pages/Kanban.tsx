@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createTask, getAllTasksByProjectId, updateTask, deleteTask } from '../services/api';
-import {jwtDecode} from 'jwt-decode';
+import { jwtDecode } from 'jwt-decode';
 import Column from '../components/Board/Column';
 import Modal from '../components/Board/Modal';
 import { User } from '../types/User';
@@ -13,30 +13,38 @@ interface DecodedToken {
 }
 
 const Kanban: React.FC<{ project: Project }> = ({ project }) => {
-  const [currentUser, setcurrentUser] = useState<User>({} as User);
+  // State for the current user
+  const [currentUser, setCurrentUser] = useState<User>({} as User);
+  // State for columns (tasks grouped by status)
   const [columns, setColumns] = useState({
     todo: [] as Task[],
     inProgress: [] as Task[],
     done: [] as Task[],
   });
+  // State for the currently selected task (for modal)
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
+  // State to control modal visibility
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isEditMode, setIsEditMode] = useState(false);
+
+
+  // Decode JWT token to get current session user
   const tokenValue = localStorage.getItem('authToken') || '';
   const decoded: DecodedToken = jwtDecode(tokenValue);
   const currentSessionUser: User = {
     id: Number(decoded.sub),
     username: decoded.username,
-    password: '', // Le mot de passe n'est pas nécessaire ici
+    password: '', // Password is not needed here
   } as User;
 
+  // Fetch tasks when the component mounts or project changes
   useEffect(() => {
     const fetchTasks = async () => {
-
-      setcurrentUser(currentSessionUser);
+      setCurrentUser(currentSessionUser);
 
       try {
+        // Fetch all tasks for the current project
         const tasks = await getAllTasksByProjectId(project.id);
+        // Group tasks by status into columns
         setColumns({
           todo: tasks.filter((task: Task) => task.status === 'todo'),
           inProgress: tasks.filter((task: Task) => task.status === 'inProgress'),
@@ -48,26 +56,43 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
     };
 
     fetchTasks();
-        // Set up periodic fetch
-    const interval = setInterval(fetchTasks, 30000); // Fetch every 30 seconds
+    // Set up periodic fetch every 30 seconds
+    const interval = setInterval(fetchTasks, 30000);
 
-    return () => clearInterval(interval); // Cleanup on component unmount
+    // Cleanup interval on component unmount
+    return () => clearInterval(interval);
   }, [project.id]);
 
-  const handleDragStart = (event: React.DragEvent, task: Task, column: 'todo' | 'inProgress' | 'done') => {
+  // Handle drag start event for a task
+  const handleDragStart = (
+    event: React.DragEvent,
+    task: Task,
+    column: 'todo' | 'inProgress' | 'done'
+  ) => {
     event.dataTransfer.setData('task', JSON.stringify(task));
     event.dataTransfer.setData('fromColumn', column);
   };
 
-  const handleDrop = async (event: React.DragEvent, targetColumn: 'todo' | 'inProgress' | 'done') => {
+  // Handle drop event to move a task between columns
+  const handleDrop = async (
+    event: React.DragEvent,
+    targetColumn: 'todo' | 'inProgress' | 'done'
+  ) => {
     const task = JSON.parse(event.dataTransfer.getData('task')) as Task;
-    const fromColumn = event.dataTransfer.getData('fromColumn') as 'todo' | 'inProgress' | 'done';
+    const fromColumn = event.dataTransfer.getData('fromColumn') as
+      | 'todo'
+      | 'inProgress'
+      | 'done';
 
     if (fromColumn === targetColumn) return;
 
+    // Update columns locally
     setColumns((prevColumns) => {
       const updatedFromColumn = prevColumns[fromColumn].filter((t) => t.id !== task.id);
-      const updatedTargetColumn = [...prevColumns[targetColumn], { ...task, status: targetColumn }];
+      const updatedTargetColumn = [
+        ...prevColumns[targetColumn],
+        { ...task, status: targetColumn },
+      ];
 
       return {
         ...prevColumns,
@@ -76,6 +101,7 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
       };
     });
 
+    // Update task status in backend
     try {
       await updateTask(task.id, {
         title: task.title,
@@ -88,34 +114,44 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
     }
   };
 
+  // Allow dropping by preventing default
   const handleDragOver = (event: React.DragEvent) => {
     event.preventDefault();
   };
 
+  // Open modal in edit mode for a selected task
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
     setIsModalOpen(true);
-    setIsEditMode(true); // Set edit mode
   };
 
+  // Close the modal and reset selected task
   const closeModal = () => {
     setIsModalOpen(false);
     setSelectedTask(null);
   };
 
+  // Handle saving (creating or updating) a task
   const handleSaveTask = async (task: Task) => {
     try {
       if (task.id === 0) {
+        // Create new task
         const taskDto = toTaskDto(task);
         const newTask = await createTask(taskDto);
-  
-        // Ajouter la tâche localement
-        setColumns({...columns, [task.status as keyof typeof columns]: [...columns[task.status as keyof typeof columns], task] })
-        
+
+        // Add the new task locally to the correct column
+        setColumns((prevColumns) => ({
+          ...prevColumns,
+          [task.status as keyof typeof prevColumns]: [
+            ...prevColumns[task.status as keyof typeof prevColumns],
+            { ...task, ...newTask },
+          ],
+        }));
       } else {
+        // Update existing task
         const updatedTask = await updateTask(task.id, task);
-  
-        // Mettre à jour la tâche localement
+
+        // Update the task locally in the correct column
         setColumns((prevColumns) => {
           const fromColumn = Object.keys(prevColumns).find((key) =>
             prevColumns[key as keyof typeof prevColumns].some((t) => t.id === updatedTask.id)
@@ -141,15 +177,17 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
     }
   };
 
+  // Handle deleting a task
   const handleDeleteTask = async (taskId: number) => {
     try {
       await deleteTask(taskId);
+      // Remove the task from all columns locally
       setColumns((prevColumns) => {
         const updatedColumns = { ...prevColumns };
         Object.keys(updatedColumns).forEach((key) => {
-          updatedColumns[key as keyof typeof prevColumns] = updatedColumns[key as keyof typeof prevColumns].filter(
-            (task) => task.id !== taskId
-          );
+          updatedColumns[key as keyof typeof prevColumns] = updatedColumns[
+            key as keyof typeof prevColumns
+          ].filter((task) => task.id !== taskId);
         });
         return updatedColumns;
       });
@@ -161,13 +199,12 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
     }
   };
 
-
-
   return (
     <div className="min-h-screen bg-[#3E3C3F]">
       <div className="container mx-auto py-8">
         <h1 className="text-3xl font-bold text-center mb-8">Kanban Board</h1>
         <div className="flex gap-4">
+          {/* Render each column with its tasks and handlers */}
           <Column
             title="To Do"
             tasks={columns.todo}
@@ -194,22 +231,21 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
           />
         </div>
         <div className="text-center mt-8">
+          {/* Button to open modal for creating a new task */}
           <button
             onClick={() => {
               setSelectedTask({
-                id: 0, // ID temporaire, sera remplacé par l'ID généré par le backend
+                id: 0, // Temporary ID, will be replaced by backend
                 projectId: project.id,
                 title: '',
                 description: '',
-                status: 'todo', // Par défaut, la tâche est dans la colonne "To Do"
-                assignedUser: { id: 0, username: '', password: '' }, // Utilisateur par défaut
-                createdBy: { id: currentUser.id, username: currentUser.username, password: '' }, // Utilisateur actuel
+                status: 'todo', // Default to "To Do" column
+                assignedUser: { id: 0, username: '', password: '' },
+                createdBy: { id: currentUser.id, username: currentUser.username, password: '' },
                 createdDate: "",
-                modifiedDate:"",
+                modifiedDate: "",
               });
               setIsModalOpen(true);
-              setIsEditMode(false); // Set create mode
-
             }}
             className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
           >
@@ -217,13 +253,14 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
           </button>
         </div>
       </div>
+      {/* Modal for creating/editing/deleting a task */}
       <Modal
         isOpen={isModalOpen}
         onClose={closeModal}
         task={selectedTask}
-        onSave={handleSaveTask} // Pass handleSaveTask to the modal
-        onDelete={handleDeleteTask} // Pass handleDeleteTask to the modal
-        users={project.users ?? []} // Pass the project
+        onSave={handleSaveTask}
+        onDelete={handleDeleteTask}
+        users={project.users ?? []}
       />
     </div>
   );
