@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import Navbar from '../layouts/Navbar';
+import Navbar from '../utils/Navbar';
 import { getAllProjects, assignUserToProject, removeUserFromProject } from '../services/api';
 import { useNavigate } from 'react-router-dom';
 import ProjectCard from '../components/Card/ProjectCard';
@@ -126,7 +126,7 @@ const Projects: React.FC = () => {
   return (
     <div>
       <Navbar />
-      <h1 className="text-4xl font-bold text-center my-8">Projects</h1>
+      <h1 className="text-4xl font-bold text-center my-8">Dashboard</h1>
 
       {/* User Projects Section */}
       <div className="mx-auto max-w-6xl px-10">
