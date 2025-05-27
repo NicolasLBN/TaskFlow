@@ -20,11 +20,14 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
 
   // Update editable task and set edit mode when the modal opens with a new task
   React.useEffect(() => {
-    setEditableTask(task);
-    if (task && task.id === 0) {
-      setIsEditMode(true); // Automatically enter edit mode for new tasks
-    } else {
-      setIsEditMode(false); // Default to view mode for existing tasks
+    if (task) {
+      setEditableTask({
+        ...task,
+        assignedUser: task.assignedUser ?? null,
+        createdBy: task.createdBy ?? null,
+        // ...ajoute d'autres propriétés par défaut si besoin
+      });
+      setIsEditMode(task.id === 0);
     }
   }, [task]);
 
@@ -33,15 +36,20 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
   const handleSave = async () => {
     if (editableTask) {
       try {
-        setIsSaving(true); // Set saving state
-        onSave(editableTask); // Update the task in the parent state
-        setIsEditMode(false); // Exit edit mode
-        onClose(); // Close the modal
+        setIsSaving(true);
+        // Transform assignedUser to assigned_user_id
+        const taskToSave = {
+          ...editableTask,
+          assigned_user_id: editableTask.assignedUser?.id ?? null,
+        };
+        onSave(taskToSave); // ou adapte le type selon ton besoin
+        setIsEditMode(false);
+        onClose();
       } catch (error) {
         console.error('Error updating task:', error);
         alert('Failed to update the task. Please try again.');
       } finally {
-        setIsSaving(false); // Reset saving state
+        setIsSaving(false);
       }
     }
   };
@@ -50,13 +58,16 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
     const selectedUserId = Number(event.target.value);
     const selectedUser = users.find((user) => user.id === selectedUserId);
     if (selectedUser) {
-      setEditableTask({ ...editableTask, assignedUser: selectedUser });
+      console.log('Selected user:', selectedUser);
+      setEditableTask(prev =>
+        prev ? { ...prev, assignedUser: selectedUser } : null
+      );
     }
   };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-gray-700 text-white rounded-2xl shadow-xl w-[48rem] max-w-full p-8 relative">
+      <div className="bg-gray-700 text-white rounded-2xl shadow-xl w-[48rem] h-[44rem] max-w-full p-8 relative">
         {/* Top Icons */}
         {!isEditMode && <div className="absolute top-4 left-4 flex items-center space-x-4 w-8 h-8 invert" >
           <button
@@ -77,7 +88,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
           </button>
         </div>
 
-        <h2 className="text-3xl font-bold mb-8 text-center">Task Details</h2>
+        <h2 className="text-3xl font-bold mb-3 text-center">Task Details</h2>
 
         <div className="space-y-6">
           {isEditMode ? (
@@ -87,7 +98,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
                 <input
                   type="text"
                   value={editableTask.title}
-                  onChange={(e) => setEditableTask({ ...editableTask, title: e.target.value })}
+                  onChange={(e) => setEditableTask(prev => prev ? { ...prev, title: e.target.value } : null)}
                   className="block py-3 px-0 w-full text-lg text-gray-700 dark:text-gray-300 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:border-gray-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
                   placeholder=" "
                   required
@@ -104,7 +115,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
               <div className="relative z-0 w-full group mb-5">
                 <textarea
                   value={editableTask.description}
-                  onChange={(e) => setEditableTask({ ...editableTask, description: e.target.value })}
+                  onChange={(e) => setEditableTask(prev => prev ? { ...prev, description: e.target.value } : null)}
                   className="block py-3 px-0 w-full text-lg text-gray-700 dark:text-gray-300 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:border-gray-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
                   placeholder=" "
                   required
@@ -121,7 +132,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
               <div className="relative z-0 w-full group mb-5">
                 <select
                   value={editableTask.status}
-                  onChange={(e) => setEditableTask({ ...editableTask, status: e.target.value })}
+                  onChange={(e) => setEditableTask(prev => prev ? { ...prev, status: e.target.value } : null)}
                   className="block py-3 px-0 w-full text-lg text-gray-700 dark:text-gray-300 bg-transparent border-0 border-b-2 border-gray-300 appearance-none dark:border-gray-500 focus:outline-none focus:ring-0 focus:border-blue-500 peer"
                   required
                 >
@@ -176,11 +187,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
                 </li>
                 <li>
                   <p className="text-lg font-medium text-gray-900 dark:text-white mt-4">Assigned User</p>
-                  <p className="text-base text-gray-700 dark:text-gray-300">{editableTask.assignedUser?.username || 'Unassigned'}</p>
+                  <p className="text-base text-gray-700 dark:text-gray-300">{editableTask.assignedUser?.username}</p>
                 </li>
                 <li>
                   <p className="text-lg font-medium text-gray-900 dark:text-white mt-4">Created By</p>
-                  <p className="text-base text-gray-700 dark:text-gray-300">{editableTask.createdBy.username}</p>
+                  <p className="text-base text-gray-700 dark:text-gray-300">{editableTask.createdBy?.username}</p>
                 </li>
                 <li>
                   <p className="text-lg font-medium text-gray-900 dark:text-white mt-4">Created Date</p>
@@ -192,7 +203,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
                 </li>
               </ul>
             </div>
-
           )}
         </div>
 

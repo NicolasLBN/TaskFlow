@@ -37,28 +37,3 @@ export const toTaskDto = (task: Partial<Task>): TaskDto => {
     modified_date: task.modifiedDate ?? new Date().toISOString(),
   };
 };
-
-export const toTask = (taskDto: Partial<TaskDto>, users: User[] = []): Task => {
-  const assignedUser = users.find(user => user.id === taskDto.assigned_user_id) || {
-    id: taskDto.assigned_user_id ?? 0,
-    username: "Unknown User",
-    password: "",
-  };
-  const createdBy = users.find(user => user.id === taskDto.created_by) || {
-    id: taskDto.created_by ?? 0,
-    username: "Unknown Creator",
-    password: "",
-  };
-
-  return {
-    id: taskDto.id ?? 0,
-    projectId: taskDto.project_id ?? 0,
-    title: taskDto.title ?? "Default Title",
-    description: taskDto.description ?? "Default Description",
-    status: taskDto.status ?? "Todo",
-    assignedUser: assignedUser,
-    createdBy: createdBy,
-    createdDate: taskDto.created_date ?? new Date().toISOString(),
-    modifiedDate: taskDto.modified_date ?? new Date().toISOString(),
-  };
-};
