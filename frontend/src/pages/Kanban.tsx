@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link } from 'react-router-dom';
 import { createTask, getAllTasksByProjectId, updateTask, deleteTask } from '../services/api';
 import { jwtDecode } from 'jwt-decode';
 import Column from '../components/Board/Column';
@@ -107,6 +108,8 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
         title: task.title,
         description: task.description,
         status: targetColumn,
+        assignedUser: task.assignedUser ?? null,
+        createdBy: task.createdBy ?? null,
       });
     } catch (error) {
       console.error(`Error updating task ${task.id}:`, error);
@@ -122,6 +125,7 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
   // Open modal in edit mode for a selected task
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
+    console.log(task)
     setIsModalOpen(true);
   };
 
@@ -156,13 +160,13 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
           const fromColumn = Object.keys(prevColumns).find((key) =>
             prevColumns[key as keyof typeof prevColumns].some((t) => t.id === updatedTask.id)
           );
-  
+
           if (!fromColumn) return prevColumns;
-  
+
           const updatedFromColumn = prevColumns[fromColumn as keyof typeof prevColumns].map((t) =>
             t.id === updatedTask.id ? updatedTask : t
           );
-  
+
           return {
             ...prevColumns,
             [fromColumn]: updatedFromColumn,
@@ -202,7 +206,15 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
   return (
     <div className="min-h-screen bg-[#3E3C3F]">
       <div className="container mx-auto py-8">
-        <h1 className="text-3xl font-bold text-center mb-8">Kanban Board</h1>
+        <div className="relative mb-8">
+          {/* Routing arrow positioned at the far left */}
+          <Link to="/home" className="absolute left-0 text-5xl font-bold hover:text-blue-400 transition">
+
+            ←
+          </Link>
+          {/* Title centered in the container */}
+          <h1 className="text-3xl font-bold text-center">Kanban Board</h1>
+        </div>
         <div className="flex gap-4">
           {/* Render each column with its tasks and handlers */}
           <Column
