@@ -12,6 +12,10 @@ export interface Task {
   modifiedDate: string;
 }
 
+export interface UserTask extends Task{
+  project: string;
+}
+
 export interface TaskDto {
   id: number;
   title: string;

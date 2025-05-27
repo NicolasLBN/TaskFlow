@@ -1,28 +1,28 @@
 import React from 'react';
 import { List, AutoSizer } from 'react-virtualized';
-import 'react-virtualized/styles.css'; // Import des styles par défaut de React Virtualized
-import { Task } from '../../types/Task';
+import 'react-virtualized/styles.css'; // Import default styles for React Virtualized
+import { Task, UserTask } from '../../types/Task';
+import TaskCard from '../Card/TaskCard';
 
 interface TaskListProps {
-  tasks: Task[];
+  userTasks: UserTask[];
 }
 
-const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
-  // Fonction pour rendre chaque ligne (tâche)
+const TaskList: React.FC<TaskListProps> = ({ userTasks }) => {
+  // Function to render each row using TaskCard
   const rowRenderer = ({
-    key, // Clé unique pour chaque ligne
-    index, // Index de la ligne
-    style, // Style pour positionner la ligne
+    key,      // Unique key for each row
+    index,    // Index of the row
+    style,    // Inline style for positioning
   }: {
     key: string;
     index: number;
     style: React.CSSProperties;
   }) => {
-    const task = tasks[index];
+    const task = userTasks[index];
     return (
-      <div key={key} style={style} className="p-4 border-b border-gray-300 bg-white dark:bg-gray-800">
-        <h3 className="text-lg font-semibold">{task.title}</h3>
-        <p className="text-sm text-gray-600 dark:text-gray-400">{task.description}</p>
+      <div key={key} style={style}>
+        <TaskCard task={task} />
       </div>
     );
   };
@@ -34,8 +34,8 @@ const TaskList: React.FC<TaskListProps> = ({ tasks }) => {
           <List
             width={width}
             height={height}
-            rowCount={tasks.length}
-            rowHeight={80} // Hauteur de chaque ligne
+            rowCount={userTasks.length}
+            rowHeight={100} // Adjust row height as needed for TaskCard
             rowRenderer={rowRenderer}
           />
         )}
