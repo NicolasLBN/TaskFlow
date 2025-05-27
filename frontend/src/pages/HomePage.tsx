@@ -6,7 +6,7 @@ import ProjectCard from '../components/Card/ProjectCard';
 import { Project } from '../types/Project';
 import { User } from '../types/User';
 import { jwtDecode } from 'jwt-decode';
-import { Task } from '../types/Task';
+import { Task, UserTask } from '../types/Task';
 import TaskList from '../components/List/TaskList';
 
 // Define DecodedToken interface for jwtDecode
@@ -15,9 +15,11 @@ interface DecodedToken {
   username: string;
 }
 
+
+
 const Projects: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [userTasks, setUserTasks] = useState<Task[]>([]);
+  const [userTasks, setUserTasks] = useState<UserTask[]>([]); // Changed type here
   const [projects, setProjects] = useState<Project[]>([]);
   const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [otherProjects, setOtherProjects] = useState<Project[]>([]);
@@ -60,15 +62,14 @@ const Projects: React.FC = () => {
         setOtherProjects(otherProjects);
         console.log('User Projects:', userProjects);
 
-        const assignedTasks = userProjects
-        .flatMap((project) => project.tasks || []) // Get all tasks from userProjects
-        .filter((task: any) => 
-                  task.assigned_user_id && 
-                  task.assigned_user_id.id === currentSessionUser.id); // Filter tasks assigned to the current user
-
+        // Create a new array of user tasks with the related project attached
+        const assignedTasks: UserTask[] = userProjects.flatMap((project) =>
+          (project.tasks ?? [])
+            .filter((task: any) => task.assigned_user_id && task.assigned_user_id.id === currentSessionUser.id)
+            .map((task: any) => ({ ...task, project: project.name }))
+        );
         console.log('Assigned Tasks:', assignedTasks);
-
-        setUserTasks(assignedTasks); // Update the userTasks state with assigned tasks
+        setUserTasks(assignedTasks);
 
       } catch (error) {
         console.error('Error fetching projects:', error);
@@ -174,7 +175,7 @@ const Projects: React.FC = () => {
         <h2 className="text-3xl font-semibold text-left mb-4">Your Tasks</h2>
         <hr className="mb-8 border-t-2 border-gray-300" />
         <div className="grid grid-cols-1 gap-6 mb-8">
-          <TaskList tasks={userTasks} />
+          <TaskList userTasks={userTasks} />
         </div>
       </div>
     </div>
