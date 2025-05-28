@@ -3,17 +3,17 @@ import { List, AutoSizer } from 'react-virtualized';
 import 'react-virtualized/styles.css'; // Import default styles for React Virtualized
 import { Task, UserTask } from '../../types/Task';
 import TaskCard from '../Card/TaskCard';
+import './TaskList.css'; // Import custom styles for TaskList
 
 interface TaskListProps {
   userTasks: UserTask[];
 }
 
 const TaskList: React.FC<TaskListProps> = ({ userTasks }) => {
-  // Function to render each row using TaskCard
   const rowRenderer = ({
-    key,      // Unique key for each row
-    index,    // Index of the row
-    style,    // Inline style for positioning
+    key,
+    index,
+    style,
   }: {
     key: string;
     index: number;
@@ -28,14 +28,14 @@ const TaskList: React.FC<TaskListProps> = ({ userTasks }) => {
   };
 
   return (
-    <div style={{ height: '400px', width: '100%' }}>
+    <div className="custom-scrollbar" style={{ height: '400px', width: '100%' }}>
       <AutoSizer>
         {({ height, width }: { height: number; width: number }) => (
           <List
             width={width}
             height={height}
             rowCount={userTasks.length}
-            rowHeight={100} // Adjust row height as needed for TaskCard
+            rowHeight={110}
             rowRenderer={rowRenderer}
           />
         )}

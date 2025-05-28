@@ -21,7 +21,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, style }) => {
   };
 
   return (
-    <div style={style} className="p-4 border-b border-gray-300 bg-white dark:bg-gray-800">
+    <div style={style} className="p-4 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-[#28242c]">
       {/* Header row: Title on left and creation date on the far right */}
       <div className="flex items-center justify-between">
         <h3 className="text-lg font-semibold">{task.title} ({task.project})</h3>
@@ -36,6 +36,7 @@ const TaskCard: React.FC<TaskCardProps> = ({ task, style }) => {
           {renderStatusIcon()}
         </p>
       </div>
+      <div className="border-t border-gray-500 mt-4"></div>
     </div>
   );
 };
