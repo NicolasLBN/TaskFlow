@@ -8,26 +8,26 @@ import { User } from '../types/User';
 import { jwtDecode } from 'jwt-decode';
 import { Task, UserTask } from '../types/Task';
 import TaskList from '../components/List/TaskList';
+import Dropdown from '../utils/Dropdown';
 
-// Define DecodedToken interface for jwtDecode
 interface DecodedToken {
   sub: string;
   username: string;
 }
 
 
-
 const Projects: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [userTasks, setUserTasks] = useState<UserTask[]>([]); // Changed type here
+  const [userTasks, setUserTasks] = useState<UserTask[]>([]);
   const [projects, setProjects] = useState<Project[]>([]);
   const [userProjects, setUserProjects] = useState<Project[]>([]);
   const [otherProjects, setOtherProjects] = useState<Project[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [selectedProject, setSelectedProject] = useState<string[]>([]);
+  const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
-
     const fetchData = async () => {
       try {
         // Decode the token to get the current user's information
@@ -48,7 +48,6 @@ const Projects: React.FC = () => {
         // Separate projects into userProjects and otherProjects
         const userProjects: Project[] = [];
         const otherProjects: Project[] = [];
-
         projects.forEach((project: Project) => {
           const isMember = (project.users ?? []).some((user: User) => user.id === currentSessionUser.id);
           if (isMember) {
@@ -57,27 +56,22 @@ const Projects: React.FC = () => {
             otherProjects.push(project);
           }
         });
-
         setUserProjects(userProjects);
         setOtherProjects(otherProjects);
-        console.log('User Projects:', userProjects);
 
-        // Create a new array of user tasks with the related project attached
+        // Création d'un tableau de tâches avec le nom du projet attaché
         const assignedTasks: UserTask[] = userProjects.flatMap((project) =>
           (project.tasks ?? [])
             .filter((task: any) => task.assigned_user_id && task.assigned_user_id.id === currentSessionUser.id)
             .map((task: any) => ({ ...task, project: project.name }))
         );
-        console.log('Assigned Tasks:', assignedTasks);
         setUserTasks(assignedTasks);
-
       } catch (error) {
         console.error('Error fetching projects:', error);
       } finally {
         setLoading(false);
       }
     };
-
     fetchData();
   }, []);
 
@@ -120,6 +114,15 @@ const Projects: React.FC = () => {
     navigate(`/kanban/${project.id}`, { state: { project } });
   };
 
+  // Filtrage des userTasks en fonction des dropdowns
+  const filteredUserTasks = userTasks.filter((task) => {
+    const matchesProject =
+      selectedProject.length === 0 || selectedProject.includes(task.project);
+    const matchesStatus =
+      selectedStatus.length === 0 || selectedStatus.includes(task.status || '');
+    return matchesProject && matchesStatus;
+  });
+
   if (loading) {
     return <p>Loading...</p>;
   }
@@ -127,7 +130,9 @@ const Projects: React.FC = () => {
   return (
     <div>
       <Navbar />
-      <h1 className="text-4xl font-bold text-center my-8">{currentUser?.username.toUpperCase() } Dashboard</h1>
+      <h1 className="text-4xl font-bold text-center my-8">
+        {currentUser?.username.toUpperCase()} Dashboard
+      </h1>
 
       {/* User Projects Section */}
       <div className="mx-auto max-w-6xl px-10">
@@ -160,7 +165,7 @@ const Projects: React.FC = () => {
               <ProjectCard
                 key={project.id}
                 project={project}
-                members={(project.users ?? [])}
+                members={project.users ?? []}
                 onJoin={() => handleJoinProject(project.id)}
               />
             ))
@@ -172,10 +177,26 @@ const Projects: React.FC = () => {
 
       {/* Task Section */}
       <div className="mx-auto max-w-6xl px-10 mt-12">
-        <h2 className="text-3xl font-semibold text-left mb-4">Your Tasks</h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="text-3xl font-semibold text-left">Your Tasks</h2>
+          <div className="flex space-x-4">
+            <Dropdown
+              label="Projects"
+              options={[...userProjects.map((project) => project.name)]}
+              selected={selectedProject}
+              onChange={setSelectedProject}
+            />
+            <Dropdown
+              label="Status"
+              options={['todo', 'inProgress', 'done']}
+              selected={selectedStatus}
+              onChange={setSelectedStatus}
+            />
+          </div>
+        </div>
         <hr className="mb-8 border-t-2 border-gray-300" />
         <div className="grid grid-cols-1 gap-6 mb-8">
-          <TaskList userTasks={userTasks} />
+          <TaskList userTasks={filteredUserTasks} />
         </div>
       </div>
     </div>
