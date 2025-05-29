@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import Navbar from '../utils/Navbar';
 import { getAllProjects, assignUserToProject, removeUserFromProject } from '../services/api';
 import { useNavigate } from 'react-router-dom';
@@ -9,12 +9,12 @@ import { jwtDecode } from 'jwt-decode';
 import { Task, UserTask } from '../types/Task';
 import TaskList from '../components/List/TaskList';
 import Dropdown from '../utils/Dropdown';
+import UserCard from '../components/Card/UserCard';
 
 interface DecodedToken {
   sub: string;
   username: string;
 }
-
 
 const Projects: React.FC = () => {
   const [currentUser, setCurrentUser] = useState<User | null>(null);
@@ -75,6 +75,17 @@ const Projects: React.FC = () => {
     fetchData();
   }, []);
 
+  // Compute unique people you work with (exclude yourself)
+  const peopleYouWorkWith = useMemo(() => {
+    if (!currentUser) return [];
+    // Flatten all users from userProjects and filter out current user
+    const allUsers: User[] = userProjects.flatMap(project => project.users ?? []);
+    const filtered = allUsers.filter(user => user.id !== currentUser.id);
+    // Create a map to remove duplicates (assuming user id uniqueness)
+    const uniqueMap = new Map(filtered.map(user => [user.id, user]));
+    return Array.from(uniqueMap.values());
+  }, [currentUser, userProjects]);
+
   // Handle joining a project
   const handleJoinProject = async (projectId: number) => {
     try {
@@ -134,6 +145,24 @@ const Projects: React.FC = () => {
         {currentUser?.username.toUpperCase()} Dashboard
       </h1>
 
+      {/* People you work with Section */}
+      <div className="mx-auto max-w-6xl px-10 mb-12">
+        <h2 className="text-3xl font-semibold text-left mb-4">People you work with</h2>
+        <div className="flex flex-wrap gap-4">
+          {peopleYouWorkWith.length > 0 ? (
+            peopleYouWorkWith.map(person => (
+              <UserCard
+                key={person.id}
+                username={person.username}
+              // Vous pouvez ajouter subtitle ou time si besoin
+              />
+            ))
+          ) : (
+            <p>No colleagues found.</p>
+          )}
+        </div>
+      </div>
+
       {/* User Projects Section */}
       <div className="mx-auto max-w-6xl px-10">
         <h2 className="text-3xl font-semibold text-left mb-4">Your Projects</h2>
@@ -181,13 +210,13 @@ const Projects: React.FC = () => {
           <h2 className="text-3xl font-semibold text-left">Your Tasks</h2>
           <div className="flex space-x-4">
             <Dropdown
-              label="Projects"
+              label="Sort by Project"
               options={[...userProjects.map((project) => project.name)]}
               selected={selectedProject}
               onChange={setSelectedProject}
             />
             <Dropdown
-              label="Status"
+              label="Sort by Status"
               options={['todo', 'inProgress', 'done']}
               selected={selectedStatus}
               onChange={setSelectedStatus}
