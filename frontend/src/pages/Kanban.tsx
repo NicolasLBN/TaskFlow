@@ -7,6 +7,8 @@ import Modal from '../components/Board/Modal';
 import { User } from '../types/User';
 import { Task, toTaskDto } from '../types/Task';
 import { Project } from '../types/Project';
+import { KanbanContext } from '../context/KanbanContext';
+
 
 interface DecodedToken {
   sub: string;
@@ -204,77 +206,88 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
   };
 
   return (
-    <div className="min-h-screen bg-[#3E3C3F]">
-      <div className="container mx-auto py-8">
-        <div className="relative mb-8">
-          {/* Routing arrow positioned at the far left */}
-          <Link to="/home" className="absolute left-0 text-5xl font-bold hover:text-blue-400 transition">
+    <KanbanContext.Provider value={{
+      currentUser,
+      columns,
+      setColumns,
+      project,
+      selectedTask,
+      setSelectedTask,
+      isModalOpen,
+      setIsModalOpen,
+    }}>
+      <div className="min-h-screen bg-[#3E3C3F]">
+        <div className="container mx-auto py-8">
+          <div className="relative mb-8">
+            {/* Routing arrow positioned at the far left */}
+            <Link to="/home" className="absolute left-0 text-5xl font-bold hover:text-blue-400 transition">
 
-            ←
-          </Link>
-          {/* Title centered in the container */}
-          <h1 className="text-3xl font-bold text-center">Kanban Board</h1>
+              ←
+            </Link>
+            {/* Title centered in the container */}
+            <h1 className="text-3xl font-bold text-center">{project.name}</h1>
+          </div>
+          <div className="flex gap-4">
+            {/* Render each column with its tasks and handlers */}
+            <Column
+              title="To Do"
+              tasks={columns.todo}
+              onDragStart={(event, task) => handleDragStart(event, task, 'todo')}
+              onDrop={(event) => handleDrop(event, 'todo')}
+              onDragOver={handleDragOver}
+              onTaskClick={handleTaskClick}
+            />
+            <Column
+              title="In Progress"
+              tasks={columns.inProgress}
+              onDragStart={(event, task) => handleDragStart(event, task, 'inProgress')}
+              onDrop={(event) => handleDrop(event, 'inProgress')}
+              onDragOver={handleDragOver}
+              onTaskClick={handleTaskClick}
+            />
+            <Column
+              title="Done"
+              tasks={columns.done}
+              onDragStart={(event, task) => handleDragStart(event, task, 'done')}
+              onDrop={(event) => handleDrop(event, 'done')}
+              onDragOver={handleDragOver}
+              onTaskClick={handleTaskClick}
+            />
+          </div>
+          <div className="text-center mt-8">
+            {/* Button to open modal for creating a new task */}
+            <button
+              onClick={() => {
+                setSelectedTask({
+                  id: 0, // Temporary ID, will be replaced by backend
+                  projectId: project.id,
+                  title: '',
+                  description: '',
+                  status: 'todo', // Default to "To Do" column
+                  assignedUser: { id: 0, username: '', password: '' },
+                  createdBy: { id: currentUser.id, username: currentUser.username, password: '' },
+                  createdDate: "",
+                  modifiedDate: "",
+                });
+                setIsModalOpen(true);
+              }}
+              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
+            >
+              + Add Task
+            </button>
+          </div>
         </div>
-        <div className="flex gap-4">
-          {/* Render each column with its tasks and handlers */}
-          <Column
-            title="To Do"
-            tasks={columns.todo}
-            onDragStart={(event, task) => handleDragStart(event, task, 'todo')}
-            onDrop={(event) => handleDrop(event, 'todo')}
-            onDragOver={handleDragOver}
-            onTaskClick={handleTaskClick}
-          />
-          <Column
-            title="In Progress"
-            tasks={columns.inProgress}
-            onDragStart={(event, task) => handleDragStart(event, task, 'inProgress')}
-            onDrop={(event) => handleDrop(event, 'inProgress')}
-            onDragOver={handleDragOver}
-            onTaskClick={handleTaskClick}
-          />
-          <Column
-            title="Done"
-            tasks={columns.done}
-            onDragStart={(event, task) => handleDragStart(event, task, 'done')}
-            onDrop={(event) => handleDrop(event, 'done')}
-            onDragOver={handleDragOver}
-            onTaskClick={handleTaskClick}
-          />
-        </div>
-        <div className="text-center mt-8">
-          {/* Button to open modal for creating a new task */}
-          <button
-            onClick={() => {
-              setSelectedTask({
-                id: 0, // Temporary ID, will be replaced by backend
-                projectId: project.id,
-                title: '',
-                description: '',
-                status: 'todo', // Default to "To Do" column
-                assignedUser: { id: 0, username: '', password: '' },
-                createdBy: { id: currentUser.id, username: currentUser.username, password: '' },
-                createdDate: "",
-                modifiedDate: "",
-              });
-              setIsModalOpen(true);
-            }}
-            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-          >
-            + Add Task
-          </button>
-        </div>
+        {/* Modal for creating/editing/deleting a task */}
+        <Modal
+          isOpen={isModalOpen}
+          onClose={closeModal}
+          task={selectedTask}
+          onSave={handleSaveTask}
+          onDelete={handleDeleteTask}
+          users={project.users ?? []}
+        />
       </div>
-      {/* Modal for creating/editing/deleting a task */}
-      <Modal
-        isOpen={isModalOpen}
-        onClose={closeModal}
-        task={selectedTask}
-        onSave={handleSaveTask}
-        onDelete={handleDeleteTask}
-        users={project.users ?? []}
-      />
-    </div>
+    </KanbanContext.Provider>
   );
 };
 
