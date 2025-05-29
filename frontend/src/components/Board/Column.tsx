@@ -1,5 +1,8 @@
-import React from 'react';
+import React, { useContext } from 'react';
 import { Task } from '../../types/Task';
+import TicketCard from '../Card/TicketCard'; // <-- Ajoute cet import
+import { KanbanContext } from '../../context/KanbanContext'; // <-- Import du contexte
+
 
 interface ColumnProps {
   title: string;
@@ -11,6 +14,8 @@ interface ColumnProps {
 }
 
 const Column: React.FC<ColumnProps> = React.memo(({ title, tasks, onDragStart, onDrop, onDragOver, onTaskClick }) => {
+  const kanban = useContext(KanbanContext); // <-- Utilisation du contexte
+
   return (
     <div
       onDrop={onDrop}
@@ -18,18 +23,15 @@ const Column: React.FC<ColumnProps> = React.memo(({ title, tasks, onDragStart, o
       className="flex-1 p-4 border border-gray-300 rounded-lg bg-[#28242c] min-h-[400px]"
     >
       <h2 className="text-center mb-4 text-xl font-semibold">{title}</h2>
+      
       {tasks.length > 0 ? (
-        tasks.map((task, index) => (
-          <div
+        tasks.map((task) => (
+          <TicketCard
             key={task.id}
-            draggable
-            onDragStart={(event) => onDragStart(event, task)}
-            onClick={() => onTaskClick(task)}
-            className="p-2 mb-2 border border-gray-300 rounded-md bg-[#3E3C3F] cursor-pointer"
-          >
-            <h4 className="text-lg font-medium">{task.title}</h4>
-            <p className="text-sm">{task.description}</p>
-          </div>
+            task={{ ...task, project: kanban?.project.name ?? '' }} // <-- Utilisation du nom du projet depuis le contexte
+            onDragStart={onDragStart}
+            onTaskClick={onTaskClick}
+          />
         ))
       ) : (
         <p className="text-center text-gray-500">No tasks</p>
