@@ -60,7 +60,7 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
 
     fetchTasks();
     // Set up periodic fetch every 30 seconds
-    const interval = setInterval(fetchTasks, 30000);
+    const interval = setInterval(fetchTasks, 10000);
 
     // Cleanup interval on component unmount
     return () => clearInterval(interval);
@@ -106,13 +106,7 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
 
     // Update task status in backend
     try {
-      await updateTask(task.id, {
-        title: task.title,
-        description: task.description,
-        status: targetColumn,
-        assignedUser: task.assignedUser ?? null,
-        createdBy: task.createdBy ?? null,
-      });
+      await updateTask(task.id, toTaskDto(task));
     } catch (error) {
       console.error(`Error updating task ${task.id}:`, error);
       alert('Failed to update the task. Please try again.');
@@ -127,7 +121,6 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
   // Open modal in edit mode for a selected task
   const handleTaskClick = (task: Task) => {
     setSelectedTask(task);
-    console.log(task)
     setIsModalOpen(true);
   };
 
@@ -141,11 +134,9 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
   const handleSaveTask = async (task: Task) => {
     try {
       if (task.id === 0) {
-        // Create new task
+        // Création (inchangé)
         const taskDto = toTaskDto(task);
         const newTask = await createTask(taskDto);
-
-        // Add the new task locally to the correct column
         setColumns((prevColumns) => ({
           ...prevColumns,
           [task.status as keyof typeof prevColumns]: [
@@ -154,25 +145,34 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
           ],
         }));
       } else {
-        // Update existing task
-        const updatedTask = await updateTask(task.id, task);
-
-        // Update the task locally in the correct column
+        const updatedTask = await updateTask(task.id, toTaskDto(task));
         setColumns((prevColumns) => {
           const fromColumn = Object.keys(prevColumns).find((key) =>
-            prevColumns[key as keyof typeof prevColumns].some((t) => t.id === updatedTask.id)
-          );
+            prevColumns[key as keyof typeof prevColumns].some((t) => t.id === task.id)
+          ) as keyof typeof prevColumns | undefined;
 
           if (!fromColumn) return prevColumns;
 
-          const updatedFromColumn = prevColumns[fromColumn as keyof typeof prevColumns].map((t) =>
-            t.id === updatedTask.id ? updatedTask : t
-          );
-
-          return {
-            ...prevColumns,
-            [fromColumn]: updatedFromColumn,
-          };
+          if (fromColumn !== task.status) {
+            const updatedFromColumn = prevColumns[fromColumn].filter((t) => t.id !== task.id);
+            const updatedToColumn = [
+              ...prevColumns[task.status as keyof typeof prevColumns],
+              { ...task, ...updatedTask },
+            ];
+            return {
+              ...prevColumns,
+              [fromColumn]: updatedFromColumn,
+              [task.status as keyof typeof prevColumns]: updatedToColumn,
+            };
+          } else {
+            const updatedFromColumn = prevColumns[fromColumn].map((t) =>
+              t.id === task.id ? { ...task, ...updatedTask } : t
+            );
+            return {
+              ...prevColumns,
+              [fromColumn]: updatedFromColumn,
+            };
+          }
         });
       }
     } catch (error) {
