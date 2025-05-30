@@ -40,9 +40,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
         // Transform assignedUser to assigned_user_id
         const taskToSave = {
           ...editableTask,
-          assigned_user_id: editableTask.assignedUser?.id ?? null,
         };
-        onSave(taskToSave); // ou adapte le type selon ton besoin
+        onSave(taskToSave);
         setIsEditMode(false);
         onClose();
       } catch (error) {
@@ -58,7 +57,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
     const selectedUserId = Number(event.target.value);
     const selectedUser = users.find((user) => user.id === selectedUserId);
     if (selectedUser) {
-      console.log('Selected user:', selectedUser);
       setEditableTask(prev =>
         prev ? { ...prev, assignedUser: selectedUser } : null
       );
