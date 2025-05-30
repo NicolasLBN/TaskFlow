@@ -1,129 +1,32 @@
-import React, { useState, useEffect } from 'react';
-import { Task } from '../../types/Task';
-import { User } from '../../types/User';
-import ActionButton from '../../utils/ActionButton';
+import useModalTask, { ModalProps } from "../../hooks/useModalTask";
+import ActionButton from "../../utils/ActionButton";
 
-interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  task: Task | null;
-  onSave: (updatedTask: Task) => void;
-  onDelete: (taskId: number) => void;
-  users: User[];
-}
-
+/**
+ * Modal component for creating or editing a task.
+ * Uses the custom useModalTask hook to manage local state and handlers.
+ *
+ * @param {ModalProps} props - Modal properties including task, users, and callbacks.
+ * @returns {JSX.Element | null} The modal dialog for task editing/creation.
+ */
 const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, users }) => {
-  const [isEditMode, setIsEditMode] = useState(false);
-  const [editableTask, setEditableTask] = useState<Task | null>(task);
-  const [isSaving, setIsSaving] = useState(false);
-  const [editField, setEditField] = useState<string | null>(null);
+  // Custom hook to manage modal state and logic
+  const {
+    editableTask,
+    setEditableTask,
+    isEditMode,
+    setIsEditMode,
+    isSaving,
+    setIsSaving,
+    editField,
+    setEditField,
+    handleSave,
+    renderField,
+  } = useModalTask(task, onSave, onClose);
 
-  useEffect(() => {
-    if (task) {
-      setEditableTask({
-        ...task,
-        assignedUser: task.assignedUser ?? null,
-        createdBy: task.createdBy ?? null,
-      });
-      setIsEditMode(task.id === 0);
-      setEditField(null);
-    }
-  }, [task]);
-
+  // Do not render modal if not open or no task is selected
   if (!isOpen || !editableTask) return null;
 
   const isNew = editableTask.id === 0;
-
-  const handleSave = async () => {
-    if (editableTask) {
-      try {
-        setIsSaving(true);
-        onSave(editableTask);
-        setIsEditMode(false);
-        onClose();
-      } catch (error) {
-        console.error('Error updating task:', error);
-        alert('Failed to update the task. Please try again.');
-      } finally {
-        setIsSaving(false);
-      }
-    }
-  };
-
-  const handleUserChange = (event: React.ChangeEvent<HTMLSelectElement>) => {
-    const selectedUserId = Number(event.target.value);
-    const selectedUser = users.find((user) => user.id === selectedUserId);
-    if (selectedUser) {
-      setEditableTask(prev =>
-        prev ? { ...prev, assignedUser: selectedUser } : null
-      );
-    }
-  };
-
-  // Helper to render a field in view or edit mode
-  const renderField = (
-    field: string,
-    value: any,
-    inputType: 'input' | 'textarea' | 'select',
-    options?: any[]
-  ) => {
-    if (isNew || editField === field) {
-      if (inputType === 'input') {
-        return (
-          <input
-            type="text"
-            className="w-full bg-[#23272f] border border-gray-600 rounded px-3 py-2 focus:outline-none focus:border-blue-500 mr-2"
-            value={value}
-            onChange={e =>
-              setEditableTask(prev => prev ? { ...prev, [field]: e.target.value } : null)
-            }
-            onBlur={() => setEditField(null)}
-            autoFocus={editField === field}
-            required={field === 'title'}
-          />
-        );
-      }
-      if (inputType === 'textarea') {
-        return (
-          <textarea
-            className="w-full bg-[#23272f] border border-gray-600 rounded px-3 py-2 focus:outline-none focus:border-blue-500 min-h-[80px] italic mr-2"
-            value={value}
-            onChange={e =>
-              setEditableTask(prev => prev ? { ...prev, [field]: e.target.value } : null)
-            }
-            onBlur={() => setEditField(null)}
-            autoFocus={editField === field}
-          />
-        );
-      }
-      if (inputType === 'select' && options) {
-        return (
-          <select
-            className="w-full bg-[#23272f] border border-gray-600 rounded px-3 py-2 focus:outline-none focus:border-blue-500 mr-2"
-            value={value}
-            onChange={e =>
-              setEditableTask(prev => prev ? { ...prev, [field]: e.target.value } : null)
-            }
-            onBlur={() => setEditField(null)}
-            autoFocus={editField === field}
-          >
-            {options.map((opt: any) =>
-              <option key={opt.value} value={opt.value}>{opt.label}</option>
-            )}
-          </select>
-        );
-      }
-    }
-    // View mode
-    return (
-      <div
-        className={`cursor-pointer text-gray-300 px-3 py-2 rounded hover:bg-gray-700${field === 'description' ? ' italic text-gray-400' : ''}`}
-        onClick={() => setEditField(field)}
-      >
-        {value || <span className="text-gray-500">Cliquez pour éditer</span>}
-      </div>
-    );
-  };
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-50">
@@ -131,18 +34,20 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-2xl font-bold">
-            {isNew ? 'Créer un ticket' : editableTask.title}
+            {isNew ? 'Create a ticket' : editableTask.title}
           </h2>
           <button
             onClick={onClose}
             className="text-gray-400 hover:text-white text-3xl font-bold"
-            title="Fermer"
+            title="Close"
           >
             &times;
           </button>
         </div>
 
+        {/* Task Form */}
         <form className="space-y-6" onSubmit={e => { e.preventDefault(); handleSave(); }}>
+          {/* Title field (only for new task) */}
           {isNew && (
             <div>
               <label className="block text-base font-semibold mb-1">Titre *</label>
@@ -153,6 +58,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
             </div>
           )}
 
+          {/* Title field (inline edit for update) */}
           {!isNew && (
             <div>
               <label className="block text-base font-semibold mb-1">Titre</label>
@@ -160,6 +66,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
             </div>
           )}
 
+          {/* Status field */}
           <div>
             <label className="block text-base font-semibold mb-1">State</label>
             {renderField(
@@ -174,11 +81,13 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
             )}
           </div>
 
+          {/* Description field */}
           <div>
             <label className="block text-base font-semibold mb-1">Description</label>
             {renderField('description', editableTask.description, 'textarea')}
           </div>
 
+          {/* Assigned user field */}
           <div>
             <label className="block text-base font-semibold mb-1">Assigned to</label>
             {isNew || editField === 'assignedUser' ? (
@@ -214,7 +123,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
           </div>
         </form>
 
-        {/* Footer */}
+        {/* Footer actions */}
         <div className="flex justify-end gap-2 mt-8">
           <ActionButton
             text="Cancel"
