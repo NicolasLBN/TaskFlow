@@ -1,7 +1,7 @@
 import axios from "axios";
 import { User } from "../types/User";
 import { Project } from "../types/Project";
-import { TaskDto, Task } from "../types/Task";
+import { TaskDto, Task, toTaskDto } from "../types/Task";
 
 // Base URL de ton backend
 const API_URL = "http://localhost:8000"; // Change si nécessaire
@@ -52,7 +52,7 @@ export const createTask = async (task: TaskDto) => {
   return response.data;
 };
 
-export const updateTask = async (taskId: number, updatedTask: Partial<Task>): Promise<Task> => {
+export const updateTask = async (taskId: number, updatedTask: Partial<TaskDto>): Promise<Task> => {
   const response = await axios.put(`${API_URL}/tasks/${taskId}`, updatedTask);
   return response.data;
 };
@@ -68,11 +68,9 @@ export const deleteTask = async (taskId: number): Promise<void> => {
 };
 
 export const getAllTasksByProjectId = async (projectId: number) => {
-  console.log(`Fetching all tasks for project ID: ${projectId}`);
   const response = await axios.get(`${API_URL}/tasks`, {
     params: { project_id: projectId },
   });
-  console.log("Tasks fetched successfully:", response.data);
   return response.data;
 };
 
