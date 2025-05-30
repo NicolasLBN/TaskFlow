@@ -1,210 +1,29 @@
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Link } from 'react-router-dom';
-import { createTask, getAllTasksByProjectId, updateTask, deleteTask } from '../services/api';
-import { jwtDecode } from 'jwt-decode';
 import Column from '../components/Board/Column';
 import Modal from '../components/Board/Modal';
-import { User } from '../types/User';
-import { Task, toTaskDto } from '../types/Task';
 import { Project } from '../types/Project';
 import { KanbanContext } from '../context/KanbanContext';
 import ActionButton from '../utils/ActionButton';
-
-
-interface DecodedToken {
-  sub: string;
-  username: string;
-}
+import { useKanbanBoard } from '../hooks/useKanbanBoard';
 
 const Kanban: React.FC<{ project: Project }> = ({ project }) => {
-  // State for the current user
-  const [currentUser, setCurrentUser] = useState<User>({} as User);
-  // State for columns (tasks grouped by status)
-  const [columns, setColumns] = useState({
-    todo: [] as Task[],
-    inProgress: [] as Task[],
-    done: [] as Task[],
-  });
-  // State for the currently selected task (for modal)
-  const [selectedTask, setSelectedTask] = useState<Task | null>(null);
-  // State to control modal visibility
-  const [isModalOpen, setIsModalOpen] = useState(false);
-
-
-  // Decode JWT token to get current session user
-  const tokenValue = localStorage.getItem('authToken') || '';
-  const decoded: DecodedToken = jwtDecode(tokenValue);
-  const currentSessionUser: User = {
-    id: Number(decoded.sub),
-    username: decoded.username,
-    password: '', // Password is not needed here
-  } as User;
-
-  // Fetch tasks when the component mounts or project changes
-  useEffect(() => {
-    const fetchTasks = async () => {
-      setCurrentUser(currentSessionUser);
-
-      try {
-        // Fetch all tasks for the current project
-        const tasks = await getAllTasksByProjectId(project.id);
-        // Group tasks by status into columns
-        setColumns({
-          todo: tasks.filter((task: Task) => task.status === 'todo'),
-          inProgress: tasks.filter((task: Task) => task.status === 'inProgress'),
-          done: tasks.filter((task: Task) => task.status === 'done'),
-        });
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-      }
-    };
-
-    fetchTasks();
-    // Set up periodic fetch every 30 seconds
-    const interval = setInterval(fetchTasks, 10000);
-
-    // Cleanup interval on component unmount
-    return () => clearInterval(interval);
-  }, [project.id]);
-
-  // Handle drag start event for a task
-  const handleDragStart = (
-    event: React.DragEvent,
-    task: Task,
-    column: 'todo' | 'inProgress' | 'done'
-  ) => {
-    event.dataTransfer.setData('task', JSON.stringify(task));
-    event.dataTransfer.setData('fromColumn', column);
-  };
-
-  // Handle drop event to move a task between columns
-  const handleDrop = async (
-    event: React.DragEvent,
-    targetColumn: 'todo' | 'inProgress' | 'done'
-  ) => {
-    const task = JSON.parse(event.dataTransfer.getData('task')) as Task;
-    const fromColumn = event.dataTransfer.getData('fromColumn') as
-      | 'todo'
-      | 'inProgress'
-      | 'done';
-
-    if (fromColumn === targetColumn) return;
-
-    // Update columns locally
-    setColumns((prevColumns) => {
-      const updatedFromColumn = prevColumns[fromColumn].filter((t) => t.id !== task.id);
-      const updatedTargetColumn = [
-        ...prevColumns[targetColumn],
-        { ...task, status: targetColumn },
-      ];
-
-      return {
-        ...prevColumns,
-        [fromColumn]: updatedFromColumn,
-        [targetColumn]: updatedTargetColumn,
-      };
-    });
-
-    // Update task status in backend
-    try {
-      await updateTask(task.id, toTaskDto(task));
-    } catch (error) {
-      console.error(`Error updating task ${task.id}:`, error);
-      alert('Failed to update the task. Please try again.');
-    }
-  };
-
-  // Allow dropping by preventing default
-  const handleDragOver = (event: React.DragEvent) => {
-    event.preventDefault();
-  };
-
-  // Open modal in edit mode for a selected task
-  const handleTaskClick = (task: Task) => {
-    setSelectedTask(task);
-    setIsModalOpen(true);
-  };
-
-  // Close the modal and reset selected task
-  const closeModal = () => {
-    setIsModalOpen(false);
-    setSelectedTask(null);
-  };
-
-  // Handle saving (creating or updating) a task
-  const handleSaveTask = async (task: Task) => {
-    try {
-      if (task.id === 0) {
-        // Création (inchangé)
-        const taskDto = toTaskDto(task);
-        const newTask = await createTask(taskDto);
-        setColumns((prevColumns) => ({
-          ...prevColumns,
-          [task.status as keyof typeof prevColumns]: [
-            ...prevColumns[task.status as keyof typeof prevColumns],
-            { ...task, ...newTask },
-          ],
-        }));
-      } else {
-        const updatedTask = await updateTask(task.id, toTaskDto(task));
-        setColumns((prevColumns) => {
-          const fromColumn = Object.keys(prevColumns).find((key) =>
-            prevColumns[key as keyof typeof prevColumns].some((t) => t.id === task.id)
-          ) as keyof typeof prevColumns | undefined;
-
-          if (!fromColumn) return prevColumns;
-
-          if (fromColumn !== task.status) {
-            const updatedFromColumn = prevColumns[fromColumn].filter((t) => t.id !== task.id);
-            const updatedToColumn = [
-              ...prevColumns[task.status as keyof typeof prevColumns],
-              { ...task, ...updatedTask },
-            ];
-            return {
-              ...prevColumns,
-              [fromColumn]: updatedFromColumn,
-              [task.status as keyof typeof prevColumns]: updatedToColumn,
-            };
-          } else {
-            const updatedFromColumn = prevColumns[fromColumn].map((t) =>
-              t.id === task.id ? { ...task, ...updatedTask } : t
-            );
-            return {
-              ...prevColumns,
-              [fromColumn]: updatedFromColumn,
-            };
-          }
-        });
-      }
-    } catch (error) {
-      console.error('Error saving task:', error);
-      alert('Failed to save the task. Please try again.');
-    } finally {
-      closeModal();
-    }
-  };
-
-  // Handle deleting a task
-  const handleDeleteTask = async (taskId: number) => {
-    try {
-      await deleteTask(taskId);
-      // Remove the task from all columns locally
-      setColumns((prevColumns) => {
-        const updatedColumns = { ...prevColumns };
-        Object.keys(updatedColumns).forEach((key) => {
-          updatedColumns[key as keyof typeof prevColumns] = updatedColumns[
-            key as keyof typeof prevColumns
-          ].filter((task) => task.id !== taskId);
-        });
-        return updatedColumns;
-      });
-    } catch (error) {
-      console.error('Error deleting task:', error);
-      alert('Failed to delete the task. Please try again.');
-    } finally {
-      closeModal();
-    }
-  };
+  const {
+    currentUser,
+    columns,
+    setColumns,
+    selectedTask,
+    setSelectedTask,
+    isModalOpen,
+    setIsModalOpen,
+    handleDragStart,
+    handleDrop,
+    handleDragOver,
+    handleTaskClick,
+    closeModal,
+    handleSaveTask,
+    handleDeleteTask,
+  } = useKanbanBoard(project);
 
   return (
     <KanbanContext.Provider value={{
@@ -220,16 +39,12 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
       <div className="min-h-screen bg-[#3E3C3F]">
         <div className="container mx-auto py-8">
           <div className="relative mb-8">
-            {/* Routing arrow positioned at the far left */}
             <Link to="/home" className="absolute left-0 text-5xl font-bold hover:text-blue-400 transition">
-
               ←
             </Link>
-            {/* Title centered in the container */}
             <h1 className="text-3xl font-bold text-center">{project.name}</h1>
           </div>
           <div className="flex gap-4">
-            {/* Render each column with its tasks and handlers */}
             <Column
               title="To Do"
               tasks={columns.todo}
@@ -256,17 +71,16 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
             />
           </div>
           <div className="text-center mt-8">
-            {/* Button to open modal for creating a new task */}
             <ActionButton
               text="+ Add Task"
               color="bg-blue-500"
               onClick={() => {
                 setSelectedTask({
-                  id: 0, // Temporary ID, will be replaced by backend
+                  id: 0,
                   projectId: project.id,
                   title: '',
                   description: '',
-                  status: 'todo', // Default to "To Do" column
+                  status: 'todo',
                   assignedUser: { id: 0, username: '', password: '' },
                   createdBy: { id: currentUser.id, username: currentUser.username, password: '' },
                   createdDate: "",
@@ -276,10 +90,8 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
               }}
               className="hover:bg-blue-600 transition"
             />
-
           </div>
         </div>
-        {/* Modal for creating/editing/deleting a task */}
         <Modal
           isOpen={isModalOpen}
           onClose={closeModal}
