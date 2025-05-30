@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Task } from '../../types/Task';
 import { User } from '../../types/User';
+import ActionButton from '../../utils/ActionButton';
 
 interface ModalProps {
   isOpen: boolean;
@@ -116,7 +117,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
     // View mode
     return (
       <div
-        className={`cursor-pointer text-gray-300 px-3 py-2 rounded hover:bg-gray-700${field === 'description' ? ' italic' : ''}`}
+        className={`cursor-pointer text-gray-300 px-3 py-2 rounded hover:bg-gray-700${field === 'description' ? ' italic text-gray-400' : ''}`}
         onClick={() => setEditField(field)}
       >
         {value || <span className="text-gray-500">Cliquez pour éditer</span>}
@@ -129,13 +130,8 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
       <div className="bg-[#282e33] text-white rounded-md shadow-2xl w-full max-w-2xl p-8 relative border border-gray-700">
         {/* Header */}
         <div className="flex justify-between items-center mb-6">
-          <h2 className="text-2xl font-bold">{isNew ? 'Créer un ticket' :
-            <div>
-              {renderField('title', editableTask.title, 'input')}
-              {!editableTask.title && (
-                <span className="text-xs text-red-400">Résumé doit être renseigné</span>
-              )}
-            </div>}
+          <h2 className="text-2xl font-bold">
+            {isNew ? 'Créer un ticket' : editableTask.title}
           </h2>
           <button
             onClick={onClose}
@@ -146,9 +142,24 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
           </button>
         </div>
 
-        {/* Formulaire */}
         <form className="space-y-6" onSubmit={e => { e.preventDefault(); handleSave(); }}>
-          {/* Etat */}
+          {isNew && (
+            <div>
+              <label className="block text-base font-semibold mb-1">Titre *</label>
+              {renderField('title', editableTask.title, 'input')}
+              {!editableTask.title && (
+                <span className="text-xs text-red-400">Résumé doit être renseigné</span>
+              )}
+            </div>
+          )}
+
+          {!isNew && (
+            <div>
+              <label className="block text-base font-semibold mb-1">Titre</label>
+              {renderField('title', editableTask.title, 'input')}
+            </div>
+          )}
+
           <div>
             <label className="block text-base font-semibold mb-1">State</label>
             {renderField(
@@ -163,13 +174,11 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
             )}
           </div>
 
-          {/* Description */}
           <div>
             <label className="block text-base font-semibold mb-1">Description</label>
             {renderField('description', editableTask.description, 'textarea')}
           </div>
 
-          {/* Assigned User */}
           <div>
             <label className="block text-base font-semibold mb-1">Assigned to</label>
             {isNew || editField === 'assignedUser' ? (
@@ -199,7 +208,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
                 className="cursor-pointer text-gray-300 px-3 py-2 rounded hover:bg-gray-700"
                 onClick={() => setEditField('assignedUser')}
               >
-                {editableTask.assignedUser?.username || <span className="text-gray-500">Click to edit</span>}
+                {editableTask.assignedUser?.username || <span className="text-gray-500">Cliquez pour éditer</span>}
               </div>
             )}
           </div>
@@ -207,19 +216,19 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
 
         {/* Footer */}
         <div className="flex justify-end gap-2 mt-8">
-          <button
+          <ActionButton
+            text="Cancel"
+            color="bg-gray-700 hover:bg-gray-600"
             onClick={onClose}
-            className="bg-gray-700 hover:bg-gray-600 text-white px-6 py-2 rounded-lg"
-          >
-            Annuler
-          </button>
-          <button
+            className="px-6 py-2 rounded-lg"
+          />
+          <ActionButton
+            text={isNew ? 'Create' : 'Save'}
+            color="bg-blue-600 hover:bg-blue-700"
             onClick={handleSave}
-            disabled={isSaving || !editableTask.title}
-            className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold"
-          >
-            {isNew ? 'Créer' : 'Enregistrer'}
-          </button>
+            className="px-6 py-2 rounded-lg font-semibold"
+            type="button"
+          />
         </div>
       </div>
     </div>
