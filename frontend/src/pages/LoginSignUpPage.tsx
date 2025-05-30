@@ -38,7 +38,6 @@ const LoginSignUpPage: React.FC = () => {
 
       } else {
         const response = await registerUser({ username, password });
-        console.log('API Response:', response);
         setSuccess('Registration successful');
       }
     } catch (err: any) {

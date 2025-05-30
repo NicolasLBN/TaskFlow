@@ -16,7 +16,6 @@ const Dropdown: React.FC<DropdownProps> = ({ options, selected, onChange, label 
   };
 
   const handleCheckboxChange = (option: string) => {
-    console.log(`Checkbox changed for option: ${option}`);
     if (selected.includes(option)) {
       onChange(selected.filter(item => item !== option));
     } else {
