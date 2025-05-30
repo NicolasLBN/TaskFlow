@@ -98,7 +98,7 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
           task={selectedTask}
           onSave={handleSaveTask}
           onDelete={handleDeleteTask}
-          users={project.users ?? []}
+          users={project.users?.map(user => ({ id: user.id ?? 0, username: user.username })) ?? []}
         />
       </div>
     </KanbanContext.Provider>
