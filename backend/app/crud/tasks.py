@@ -24,22 +24,27 @@ async def create_task(task: Task):
 
 @router.put("/tasks/{task_id}")
 async def update_task(task_id: int, task_data: dict):
+    print(f"Updating task with ID: {task_data}")
     try:
-        # Extract updated fields from the request data
+        # Extract all fields from the request data
         title = task_data.get("title")
         description = task_data.get("description")
         status = task_data.get("status")
-        # Use timezone-aware UTC datetime for modification date
+        assigned_user_id = task_data.get("assigned_user_id")
+        project_id = task_data.get("project_id")
+        created_by = task_data.get("created_by")
+        created_date = task_data.get("created_date")
+        # Always update modified_date to now
         modified_date = datetime.now(timezone.utc).isoformat()
 
-        # Update the task in the database
+        # Update all fields in the database
         cursor.execute(
             """
             UPDATE tasks
-            SET title = ?, description = ?, status = ?, modified_date = ?
+            SET title = ?, description = ?, status = ?, assigned_user_id = ?, project_id = ?, created_by = ?, created_date = ?, modified_date = ?
             WHERE id = ?
             """,
-            (title, description, status, modified_date, task_id),
+            (title, description, status, assigned_user_id, project_id, created_by, created_date, modified_date, task_id),
         )
         conn.commit()
 
@@ -49,8 +54,13 @@ async def update_task(task_id: int, task_data: dict):
             "title": title,
             "description": description,
             "status": status,
-            "modifiedDate": modified_date,
+            "assigned_user_id": assigned_user_id,
+            "project_id": project_id,
+            "created_by": created_by,
+            "created_date": created_date,
+            "modified_date": modified_date,
         }
+
     except Exception as e:
         logger.error(f"Error updating task {task_id}: {e}")
         raise HTTPException(status_code=500, detail="An error occurred while updating the task")
@@ -107,7 +117,7 @@ async def get_all_tasks_by_project(project_id: int):
         return [
             {
                 "id": task["id"],
-                "project_id": task["project_id"],
+                "projectId": task["project_id"],
                 "title": task["title"],
                 "description": task["description"],
                 "status": task["status"],
