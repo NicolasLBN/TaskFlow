@@ -8,6 +8,7 @@ import { User } from '../types/User';
 import { Task, toTaskDto } from '../types/Task';
 import { Project } from '../types/Project';
 import { KanbanContext } from '../context/KanbanContext';
+import ActionButton from '../utils/ActionButton';
 
 
 interface DecodedToken {
@@ -256,7 +257,9 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
           </div>
           <div className="text-center mt-8">
             {/* Button to open modal for creating a new task */}
-            <button
+            <ActionButton
+              text="+ Add Task"
+              color="bg-blue-500"
               onClick={() => {
                 setSelectedTask({
                   id: 0, // Temporary ID, will be replaced by backend
@@ -271,10 +274,9 @@ const Kanban: React.FC<{ project: Project }> = ({ project }) => {
                 });
                 setIsModalOpen(true);
               }}
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600 transition"
-            >
-              + Add Task
-            </button>
+              className="hover:bg-blue-600 transition"
+            />
+
           </div>
         </div>
         {/* Modal for creating/editing/deleting a task */}
