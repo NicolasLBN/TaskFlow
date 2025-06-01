@@ -1,7 +1,7 @@
 import React from 'react';
 import { List, AutoSizer } from 'react-virtualized';
 import 'react-virtualized/styles.css'; // Import default styles for React Virtualized
-import { Task, UserTask } from '../../types/Task';
+import { UserTask } from '../../types/Task';
 import TaskCard from '../Card/TaskCard';
 import './TaskList.css'; // Import custom styles for TaskList
 
@@ -35,7 +35,7 @@ const TaskList: React.FC<TaskListProps> = ({ userTasks }) => {
             width={width}
             height={height}
             rowCount={userTasks.length}
-            rowHeight={110}
+            rowHeight={65}
             rowRenderer={rowRenderer}
           />
         )}
