@@ -1,3 +1,4 @@
+import { useState } from "react";
 import useModalTask, { ModalProps } from "../../hooks/useModalTask";
 import ActionButton from "../../utils/ActionButton";
 
@@ -19,6 +20,9 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
     renderField,
   } = useModalTask(task, onSave, onClose);
 
+  // State for the three-dots menu
+  const [menuOpen, setMenuOpen] = useState(false);
+
   // Do not render modal if not open or no task is selected
   if (!isOpen || !editableTask) return null;
 
@@ -32,13 +36,41 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
           <h2 className="text-2xl font-bold">
             {isNew ? 'Create a ticket' : editableTask.title}
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-white text-3xl font-bold"
-            title="Close"
-          >
-            &times;
-          </button>
+          <div className="flex items-center gap-2">
+            {/* Three dots button with menu */}
+            <div className="relative">
+              <button
+                type="button"
+                className="bg-[#282e33] text-gray-400 hover:bg-gray-700 mt-2 w-10 h-10 flex items-center justify-center text-2xl focus:outline-none"
+                onClick={() => setMenuOpen((open) => !open)}
+                aria-label="More actions"
+              >
+                <span className="mb-3">&#8230;</span>
+              </button>
+              {menuOpen && (
+                <div className="absolute right-0 mt-2 w-32 bg-[#23272f] border border-gray-700 rounded shadow-lg z-50">
+                  <button
+                    className="block w-full text-left px-4 py-2 text-sm text-red-400 hover:bg-gray-700"
+                    onClick={() => {
+                      setMenuOpen(false);
+                      if (editableTask.id !== 0) onDelete(editableTask.id);
+                    }}
+                  >
+                    Delete
+                  </button>
+                </div>
+              )}
+            </div>
+            <button
+              onClick={onClose}
+              className="text-gray-400 hover:text-white text-3xl font-bold"
+              title="Close"
+            >
+              &times;
+            </button>
+          </div>
+
+
         </div>
 
         {/* Task Form */}
