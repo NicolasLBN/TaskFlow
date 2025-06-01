@@ -13,10 +13,6 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
   const {
     editableTask,
     setEditableTask,
-    isEditMode,
-    setIsEditMode,
-    isSaving,
-    setIsSaving,
     editField,
     setEditField,
     handleSave,
@@ -50,10 +46,10 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
           {/* Title field (only for new task) */}
           {isNew && (
             <div>
-              <label className="block text-base font-semibold mb-1">Titre *</label>
+              <label className="block text-base font-semibold mb-1">Title *</label>
               {renderField('title', editableTask.title, 'input')}
               {!editableTask.title && (
-                <span className="text-xs text-red-400">Résumé doit être renseigné</span>
+                <span className="text-xs text-red-400">Summary is required</span>
               )}
             </div>
           )}
@@ -61,7 +57,7 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
           {/* Title field (inline edit for update) */}
           {!isNew && (
             <div>
-              <label className="block text-base font-semibold mb-1">Titre</label>
+              <label className="block text-base font-semibold mb-1">Title</label>
               {renderField('title', editableTask.title, 'input')}
             </div>
           )}
@@ -91,33 +87,39 @@ const Modal: React.FC<ModalProps> = ({ isOpen, onClose, task, onSave, onDelete, 
           <div>
             <label className="block text-base font-semibold mb-1">Assigned to</label>
             {isNew || editField === 'assignedUser' ? (
-              <select
-                className="w-full bg-[#23272f] border border-gray-600 rounded px-3 py-2 focus:outline-none focus:border-blue-500 mr-2"
-                value={editableTask.assignedUser?.id ?? ''}
-                onChange={e => {
-                  const selectedUserId = Number(e.target.value);
-                  const selectedUser = users.find((user) => user.id === selectedUserId);
-                  if (selectedUser) {
-                    setEditableTask(prev =>
-                      prev ? { ...prev, assignedUser: selectedUser } : null
-                    );
-                  }
-                }}
-                onBlur={() => setEditField(null)}
-                autoFocus={editField === 'assignedUser'}
-              >
-                {users.map((user) => (
-                  <option key={user.id} value={user.id}>
-                    {user.username}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  className="w-full bg-[#23272f] border border-gray-600 rounded px-3 py-2 pr-8 focus:outline-none focus:border-blue-500 mr-2 appearance-none"
+                  value={editableTask.assignedUser?.id ?? ''}
+                  onChange={e => {
+                    const selectedUserId = Number(e.target.value);
+                    const selectedUser = users.find((user) => user.id === selectedUserId);
+                    if (selectedUser) {
+                      setEditableTask(prev =>
+                        prev ? { ...prev, assignedUser: selectedUser } : null
+                      );
+                    }
+                  }}
+                  onBlur={() => setEditField(null)}
+                  autoFocus={editField === 'assignedUser'}
+                >
+                  {users.map((user) => (
+                    <option key={user.id} value={user.id}>
+                      {user.username}
+                    </option>
+                  ))}
+                </select>
+                {/* Custom chevron absolutely positioned to the right */}
+                <span className="pointer-events-none absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400">
+                  ▼
+                </span>
+              </div>
             ) : (
               <div
                 className="cursor-pointer text-gray-300 px-3 py-2 rounded hover:bg-gray-700"
                 onClick={() => setEditField('assignedUser')}
               >
-                {editableTask.assignedUser?.username || <span className="text-gray-500">Cliquez pour éditer</span>}
+                {editableTask.assignedUser?.username || <span className="text-gray-500">Click to edit</span>}
               </div>
             )}
           </div>
