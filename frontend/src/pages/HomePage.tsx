@@ -1,138 +1,35 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React from 'react';
 import Navbar from '../utils/Navbar';
-import { getAllProjects, assignUserToProject, removeUserFromProject } from '../services/api';
-import { useNavigate } from 'react-router-dom';
 import ProjectCard from '../components/Card/ProjectCard';
-import { Project } from '../types/Project';
-import { User } from '../types/User';
-import { jwtDecode } from 'jwt-decode';
-import { Task, UserTask } from '../types/Task';
 import TaskList from '../components/List/TaskList';
 import Dropdown from '../utils/Dropdown';
 import UserCard from '../components/Card/UserCard';
+import { useNavigate } from 'react-router-dom';
+import { useHomePage } from '../hooks/useHomePage';
 
-interface DecodedToken {
-  sub: string;
-  username: string;
-}
-
-const Projects: React.FC = () => {
-  const [currentUser, setCurrentUser] = useState<User | null>(null);
-  const [userTasks, setUserTasks] = useState<UserTask[]>([]);
-  const [projects, setProjects] = useState<Project[]>([]);
-  const [userProjects, setUserProjects] = useState<Project[]>([]);
-  const [otherProjects, setOtherProjects] = useState<Project[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [selectedProject, setSelectedProject] = useState<string[]>([]);
-  const [selectedStatus, setSelectedStatus] = useState<string[]>([]);
+/**
+ * HomePage component displaying user dashboard, projects, colleagues, and tasks.
+ * Uses the useHomePage hook for all business logic and state.
+ */
+const HomePage: React.FC = () => {
   const navigate = useNavigate();
-
-  useEffect(() => {
-    const fetchData = async () => {
-      try {
-        // Decode the token to get the current user's information
-        const tokenValue = localStorage.getItem('authToken') || '';
-        const decoded: DecodedToken = jwtDecode(tokenValue);
-        const currentSessionUser: User = {
-          id: Number(decoded.sub),
-          username: decoded.username,
-          password: ''
-        };
-        setCurrentUser(currentSessionUser);
-
-        // Fetch all projects
-        const projectsResponse = await getAllProjects();
-        const projects = projectsResponse.projects || [];
-        setProjects(projects);
-
-        // Separate projects into userProjects and otherProjects
-        const userProjects: Project[] = [];
-        const otherProjects: Project[] = [];
-        projects.forEach((project: Project) => {
-          const isMember = (project.users ?? []).some((user: User) => user.id === currentSessionUser.id);
-          if (isMember) {
-            userProjects.push(project);
-          } else {
-            otherProjects.push(project);
-          }
-        });
-        setUserProjects(userProjects);
-        setOtherProjects(otherProjects);
-
-        // Création d'un tableau de tâches avec le nom du projet attaché
-        const assignedTasks: UserTask[] = userProjects.flatMap((project) =>
-          (project.tasks ?? [])
-            .filter((task: any) => task.assigned_user_id && task.assigned_user_id.id === currentSessionUser.id)
-            .map((task: any) => ({ ...task, project: project.name }))
-        );
-        setUserTasks(assignedTasks);
-      } catch (error) {
-        console.error('Error fetching projects:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchData();
-  }, []);
-
-  // Compute unique people you work with (exclude yourself)
-  const peopleYouWorkWith = useMemo(() => {
-    if (!currentUser) return [];
-    // Flatten all users from userProjects and filter out current user
-    const allUsers: User[] = userProjects.flatMap(project => project.users ?? []);
-    const filtered = allUsers.filter(user => user.id !== currentUser.id);
-    // Create a map to remove duplicates (assuming user id uniqueness)
-    const uniqueMap = new Map(filtered.map(user => [user.id, user]));
-    return Array.from(uniqueMap.values());
-  }, [currentUser, userProjects]);
-
-  // Handle joining a project
-  const handleJoinProject = async (projectId: number) => {
-    try {
-      if (!currentUser || currentUser.id === undefined) return;
-      await assignUserToProject(projectId, currentUser.id);
-
-      // Update userProjects and otherProjects
-      const joinedProject = projects.find((project) => project.id === projectId);
-      if (joinedProject) {
-        setUserProjects((prev) => [...prev, joinedProject]);
-        setOtherProjects((prev) => prev.filter((project) => project.id !== projectId));
-      }
-    } catch (error) {
-      console.error('Error joining project:', error);
-    }
-  };
-
-  // Handle leaving a project
-  const handleLeaveProject = async (projectId: number) => {
-    try {
-      if (!currentUser || currentUser.id === undefined) return;
-      await removeUserFromProject(projectId, currentUser.id);
-
-      // Update userProjects and otherProjects
-      const leftProject = projects.find((project) => project.id === projectId);
-      if (leftProject) {
-        setOtherProjects((prev) => [...prev, leftProject]);
-        setUserProjects((prev) => prev.filter((project) => project.id !== projectId));
-      }
-    } catch (error) {
-      console.error('Error leaving project:', error);
-    }
-  };
-
-  // Navigate to Kanban board
-  const handleGoToBoard = (project: Project) => {
-    navigate(`/kanban/${project.id}`, { state: { project } });
-  };
-
-  // Filtrage des userTasks en fonction des dropdowns
-  const filteredUserTasks = userTasks.filter((task) => {
-    const matchesProject =
-      selectedProject.length === 0 || selectedProject.includes(task.project);
-    const matchesStatus =
-      selectedStatus.length === 0 || selectedStatus.includes(task.status || '');
-    return matchesProject && matchesStatus;
-  });
+  const {
+    currentUser,
+    userTasks,
+    projects,
+    userProjects,
+    otherProjects,
+    loading,
+    selectedProject,
+    setSelectedProject,
+    selectedStatus,
+    setSelectedStatus,
+    peopleYouWorkWith,
+    handleJoinProject,
+    handleLeaveProject,
+    handleGoToBoard,
+    filteredUserTasks,
+  } = useHomePage(navigate);
 
   if (loading) {
     return <p>Loading...</p>;
@@ -154,7 +51,6 @@ const Projects: React.FC = () => {
               <UserCard
                 key={person.id}
                 username={person.username}
-              // Vous pouvez ajouter subtitle ou time si besoin
               />
             ))
           ) : (
@@ -232,4 +128,4 @@ const Projects: React.FC = () => {
   );
 };
 
-export default Projects;
+export default HomePage;
